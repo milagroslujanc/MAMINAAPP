@@ -1,0 +1,60 @@
+services:
+  db:
+    build: ./database
+    container_name: mamina-db
+    restart: unless-stopped
+    env_file:
+      - ./database/.env
+    ports:
+      - "3307:3306"
+    volumes:
+      - mamina_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  backend:
+    build: ./backend
+    container_name: mamina-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Hostname del servicio MySQL en la red de Compose
+      DB_HOST: db
+      DB_PORT: 3306
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  frontend:
+    build: ./frontend
+    container_name: mamina-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mamina_mysql_data:
