@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY index.html vite.config.js ./
+COPY public ./public
 COPY src ./src
 # Variables de build (VITE_*); Vite también lee .env si existe
 COPY .env* ./

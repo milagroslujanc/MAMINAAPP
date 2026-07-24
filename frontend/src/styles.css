@@ -1,16 +1,26 @@
 :root {
-  --bg: #122018;
-  --bg-2: #1a2c22;
-  --surface: #24352c;
-  --surface-2: #2d4338;
-  --ink: #f3efe6;
-  --muted: #b7c4bb;
-  --accent: #e2b15a;
-  --accent-2: #c9842f;
-  --ok: #6fbf8a;
-  --danger: #d9786a;
-  --line: rgba(243, 239, 230, 0.12);
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  /* Paleta derivada de Mamina.png */
+  --rojo: #901020;       /* rojo principal (fondo del icono) */
+  --borgona: #700010;    /* borgoña profundo (sweater / sombra) */
+  --rosa: #c02040;       /* cinta “Restaurant – Anticuchería” */
+  --crema: #fff8f0;      /* crema del lettering blanco-cálido */
+  --madera: #5c3018;     /* letrero de madera */
+  --carbon: #1a1210;     /* texto / contornos */
+  --gris: #f5efea;       /* fondos suaves cálidos */
+
+  --bg: var(--crema);
+  --bg-2: #ffe8d6;
+  --surface: #ffffff;
+  --surface-2: var(--gris);
+  --ink: var(--carbon);
+  --muted: #6b5348;
+  --accent: var(--rojo);
+  --accent-2: var(--borgona);
+  --accent-soft: var(--rosa);
+  --ok: #3d7a4a;
+  --danger: var(--rosa);
+  --line: rgba(26, 18, 16, 0.12);
+  --shadow: 0 16px 40px rgba(112, 0, 16, 0.14);
   --font-display: 'Fraunces', Georgia, serif;
   --font-body: 'Outfit', system-ui, sans-serif;
   --radius: 18px;
@@ -31,9 +41,9 @@ body {
   font-family: var(--font-body);
   color: var(--ink);
   background:
-    radial-gradient(circle at 12% 10%, rgba(226, 177, 90, 0.18), transparent 34%),
-    radial-gradient(circle at 88% 0%, rgba(111, 191, 138, 0.12), transparent 28%),
-    linear-gradient(160deg, var(--bg), #0d1612 55%, var(--bg-2));
+    radial-gradient(circle at 10% 0%, rgba(192, 32, 64, 0.12), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(144, 16, 32, 0.1), transparent 32%),
+    linear-gradient(165deg, var(--crema) 0%, var(--bg-2) 52%, var(--gris) 100%);
   background-attachment: fixed;
 }
 
@@ -55,13 +65,13 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(13, 22, 18, 0.72);
+  background: rgba(255, 248, 240, 0.92);
 }
 
 .brand {
@@ -71,21 +81,20 @@ a {
   text-decoration: none;
 }
 
-.brand-mark {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.7rem;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(145deg, var(--accent), var(--accent-2));
-  color: #1a1408;
-  font-weight: 700;
+.brand-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  border-radius: 0.65rem;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(107, 15, 29, 0.18);
 }
 
 .brand-text {
   font-family: var(--font-display);
   font-size: 1.35rem;
   letter-spacing: 0.02em;
+  color: var(--rojo);
 }
 
 .nav-links {
@@ -101,8 +110,8 @@ a {
 }
 
 .nav-links a.active {
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--rojo);
+  color: #fff;
 }
 
 .main {
@@ -115,8 +124,9 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.72rem;
-  color: var(--accent);
+  color: var(--rosa);
   margin: 0 0 0.5rem;
+  font-weight: 600;
 }
 
 h1,
@@ -125,6 +135,7 @@ h3 {
   font-family: var(--font-display);
   font-weight: 700;
   margin: 0 0 0.5rem;
+  color: var(--borgona);
 }
 
 h1 {
@@ -143,18 +154,18 @@ h1 {
 }
 
 .alert {
-  background: rgba(217, 120, 106, 0.16);
-  border: 1px solid rgba(217, 120, 106, 0.45);
-  color: #ffd4cd;
+  background: rgba(217, 76, 106, 0.12);
+  border: 1px solid rgba(217, 76, 106, 0.4);
+  color: var(--borgona);
   padding: 0.85rem 1rem;
   border-radius: 12px;
   margin: 1rem 0;
 }
 
 .alert.ok {
-  background: rgba(111, 191, 138, 0.14);
-  border-color: rgba(111, 191, 138, 0.4);
-  color: #d8ffe6;
+  background: rgba(47, 125, 74, 0.12);
+  border-color: rgba(47, 125, 74, 0.35);
+  color: #1f5a35;
 }
 
 .btn {
@@ -181,10 +192,14 @@ h1 {
 }
 
 .btn.primary {
-  background: linear-gradient(145deg, var(--accent), var(--accent-2));
-  color: #1a1408;
+  background: linear-gradient(145deg, var(--rojo), var(--borgona));
+  color: #fff;
   border: none;
   font-weight: 600;
+}
+
+.btn.primary:hover {
+  background: linear-gradient(145deg, var(--rosa), var(--rojo));
 }
 
 .btn.large {
@@ -214,13 +229,14 @@ h1 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 1rem 0.85rem;
-  background: rgba(36, 53, 44, 0.85);
+  background: var(--surface);
   color: var(--ink);
   text-align: left;
   cursor: pointer;
   display: grid;
   gap: 0.35rem;
   min-height: 120px;
+  box-shadow: 0 4px 14px rgba(139, 30, 45, 0.06);
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
   animation: rise 0.5s ease both;
 }
@@ -234,18 +250,19 @@ h1 {
 
 .table-tile.libre:hover {
   transform: translateY(-3px);
-  border-color: rgba(226, 177, 90, 0.55);
+  border-color: rgba(139, 30, 45, 0.45);
 }
 
 .table-tile.ocupada {
-  background: rgba(20, 20, 20, 0.35);
-  color: #8f9a92;
+  background: #ebebeb;
+  color: #888;
   cursor: not-allowed;
 }
 
 .table-num {
   font-family: var(--font-display);
   font-size: 1.2rem;
+  color: var(--borgona);
 }
 
 .table-status {
@@ -270,8 +287,8 @@ h1 {
   position: fixed;
   inset: auto 1rem 1rem auto;
   width: min(340px, calc(100% - 2rem));
-  background: #102018;
-  border: 1px solid rgba(226, 177, 90, 0.35);
+  background: var(--surface);
+  border: 1px solid rgba(139, 30, 45, 0.25);
   border-radius: 24px;
   padding: 1.25rem;
   box-shadow: var(--shadow);
@@ -286,6 +303,7 @@ h1 {
   border-radius: 16px;
   padding: 0.75rem;
   margin: 1rem 0;
+  border: 1px solid var(--line);
 }
 
 .qr-close {
@@ -297,14 +315,15 @@ h1 {
 }
 
 .qr-link {
-  color: var(--accent);
+  color: var(--rojo);
   font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .center-card {
   width: min(520px, 100%);
   margin: 2rem auto;
-  background: rgba(36, 53, 44, 0.78);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 24px;
   padding: 1.75rem;
@@ -329,10 +348,16 @@ h1 {
 .cart-list input {
   width: 100%;
   border: 1px solid var(--line);
-  background: #15231c;
+  background: var(--gris);
   color: var(--ink);
   border-radius: 12px;
   padding: 0.75rem 0.9rem;
+}
+
+.login-form input:focus,
+.cart-list input:focus {
+  outline: 2px solid rgba(217, 76, 106, 0.35);
+  border-color: var(--rosa);
 }
 
 .admin-actions {
@@ -354,14 +379,15 @@ h1 {
   border: none;
   border-radius: 999px;
   padding: 0.8rem 1.1rem;
-  background: linear-gradient(145deg, var(--accent), var(--accent-2));
-  color: #1a1408;
+  background: linear-gradient(145deg, var(--rojo), var(--borgona));
+  color: #fff;
   font-weight: 600;
   cursor: pointer;
   display: grid;
   gap: 0.15rem;
   text-align: right;
   animation: pop 0.4s ease both;
+  box-shadow: 0 8px 20px rgba(139, 30, 45, 0.25);
 }
 
 .category-block {
@@ -371,7 +397,7 @@ h1 {
 .category-block h2 {
   margin-bottom: 0.85rem;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 2px solid rgba(139, 30, 45, 0.18);
 }
 
 .product-list {
@@ -385,8 +411,9 @@ h1 {
   gap: 0.9rem;
   padding: 0.75rem;
   border-radius: 16px;
-  background: rgba(36, 53, 44, 0.72);
+  background: var(--surface);
   border: 1px solid var(--line);
+  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
 }
 
 .product-row img {
@@ -394,7 +421,7 @@ h1 {
   height: 96px;
   object-fit: cover;
   border-radius: 12px;
-  background: #0d1612;
+  background: var(--gris);
 }
 
 .product-row.agotado {
@@ -435,13 +462,13 @@ h1 {
 }
 
 .badge-agotado {
-  background: rgba(217, 120, 106, 0.2);
-  color: #ffc4bb;
+  background: rgba(217, 76, 106, 0.16);
+  color: var(--borgona);
 }
 
 .badge-nuevo {
-  background: rgba(226, 177, 90, 0.22);
-  color: var(--accent);
+  background: rgba(139, 30, 45, 0.12);
+  color: var(--rojo);
 }
 
 .cart-drawer {
@@ -450,7 +477,7 @@ h1 {
   right: 0;
   width: min(400px, 100%);
   height: 100vh;
-  background: #101c16;
+  background: var(--surface);
   border-left: 1px solid var(--line);
   padding: 1.25rem;
   box-shadow: var(--shadow);
@@ -480,6 +507,10 @@ h1 {
   cursor: pointer;
 }
 
+.linkish:hover {
+  color: var(--rojo);
+}
+
 .cart-list {
   list-style: none;
   margin: 0;
@@ -503,9 +534,14 @@ h1 {
   height: 2rem;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--gris);
   color: var(--ink);
   cursor: pointer;
+}
+
+.qty-row button:hover {
+  border-color: var(--rosa);
+  color: var(--rojo);
 }
 
 .cart-footer {
@@ -531,7 +567,7 @@ h1 {
   appearance: none;
   text-align: left;
   border: 1px solid var(--line);
-  background: rgba(36, 53, 44, 0.8);
+  background: var(--surface);
   color: var(--ink);
   border-radius: 16px;
   padding: 0.9rem;
@@ -539,15 +575,17 @@ h1 {
   display: grid;
   gap: 0.35rem;
   transition: transform 0.15s ease;
+  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
 }
 
 .order-card:hover {
   transform: translateY(-2px);
+  border-color: rgba(139, 30, 45, 0.3);
 }
 
 .order-card.is-new {
-  border-color: rgba(226, 177, 90, 0.55);
-  box-shadow: 0 0 0 1px rgba(226, 177, 90, 0.2);
+  border-color: rgba(217, 76, 106, 0.55);
+  box-shadow: 0 0 0 1px rgba(217, 76, 106, 0.2);
   animation: pulse 1.6s ease infinite;
 }
 
@@ -559,17 +597,19 @@ h1 {
 
 .status-pill {
   text-transform: capitalize;
-  color: var(--accent);
+  color: var(--rojo);
   margin: 0;
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .order-detail {
-  background: rgba(36, 53, 44, 0.78);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 1.1rem;
   min-height: 320px;
+  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
 }
 
 .detail-items {
@@ -590,8 +630,8 @@ h1 {
   margin: 0.35rem 0 0;
   padding: 0.45rem 0.6rem;
   border-radius: 10px;
-  background: rgba(226, 177, 90, 0.16);
-  color: #ffe3a8;
+  background: rgba(217, 76, 106, 0.12);
+  color: var(--borgona);
   font-weight: 600;
 }
 
@@ -602,7 +642,7 @@ h1 {
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(12, 10, 8, 0.72);
+  background: rgba(34, 34, 34, 0.55);
   animation: rise 0.2s ease;
 }
 
@@ -610,9 +650,9 @@ h1 {
   width: min(420px, 100%);
   padding: 1.4rem 1.35rem;
   border-radius: 18px;
-  background: linear-gradient(160deg, #2a221c, #1a1512);
-  border: 1px solid rgba(255, 220, 170, 0.18);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  background: var(--surface);
+  border: 1px solid rgba(139, 30, 45, 0.18);
+  box-shadow: var(--shadow);
 }
 
 .modal-card h2 {
@@ -666,10 +706,10 @@ h1 {
 @keyframes pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(226, 177, 90, 0.25);
+    box-shadow: 0 0 0 0 rgba(217, 76, 106, 0.28);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(226, 177, 90, 0);
+    box-shadow: 0 0 0 6px rgba(217, 76, 106, 0);
   }
 }
 

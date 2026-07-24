@@ -11,7 +11,7 @@ export default function App() {
     <div className="app-shell">
       <header className="topbar">
         <NavLink to="/" className="brand">
-          <span className="brand-mark">M</span>
+          <img src="/mamina.png" alt="La Mamina" className="brand-logo" width="40" height="40" />
           <span className="brand-text">La Mamina</span>
         </NavLink>
         <nav className="nav-links">
