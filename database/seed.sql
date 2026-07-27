@@ -25,7 +25,7 @@ INSERT INTO categories (name, sort_order) VALUES
 ('Postres', 4);
 
 INSERT INTO products (category_id, name, description, price, image_url, stock, is_active) VALUES
-(1, 'Ceviche Clásico', 'Pescado fresco marinado en limón con cebolla y ají', 28.00, 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=400', 20, 1),
+(1, 'Combinado Completo', 'Pescado fresco marinado en limón con cebolla y ají', 28.00, 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=400', 20, 1),
 (1, 'Tequeños', 'Deditos de queso envueltos en masa crujiente (6 und)', 16.00, 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400', 15, 1),
 (1, 'Papa a la Huancaína', 'Papas con crema de ají amarillo', 14.00, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400', 0, 1),
 (2, 'Lomo Saltado', 'Lomo salteado con cebolla, tomate y papas fritas', 32.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400', 18, 1),
