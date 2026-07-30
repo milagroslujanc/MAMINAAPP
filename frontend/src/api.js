@@ -37,6 +37,8 @@ export const api = {
   getMenu: () => request('/api/menu'),
   createOrder: (payload) =>
     request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }),
+  getActiveOrder: (sessionToken) =>
+    request(`/api/orders/active?sessionToken=${encodeURIComponent(sessionToken)}`),
   getKitchenOrders: () => request('/api/kitchen'),
   getKitchenOrder: (id) => request(`/api/kitchen/${id}`),
   kitchenStreamUrl: () => `${API_BASE}/api/kitchen/stream`,
