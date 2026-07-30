@@ -8,7 +8,10 @@ router.get(
   '/',
   asyncHandler(async (_req, res) => {
     const [rows] = await pool.query(
-      'SELECT id, number, capacity, status, qr_token FROM `tables` ORDER BY number'
+      `SELECT id, number, capacity, status, qr_token
+       FROM \`tables\`
+       WHERE is_active = 1
+       ORDER BY number`
     );
     res.json(rows);
   })
@@ -24,13 +27,17 @@ router.post(
       await conn.beginTransaction();
 
       const [tables] = await conn.query(
-        'SELECT id, number, status FROM `tables` WHERE id = ? FOR UPDATE',
+        'SELECT id, number, status, is_active FROM `tables` WHERE id = ? FOR UPDATE',
         [tableId]
       );
       const table = tables[0];
       if (!table) {
         await conn.rollback();
         return res.status(404).json({ message: 'Mesa no encontrada' });
+      }
+      if (!table.is_active) {
+        await conn.rollback();
+        return res.status(403).json({ message: 'Esta mesa está desactivada y no admite pedidos' });
       }
       if (table.status === 'ocupada') {
         await conn.rollback();

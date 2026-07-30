@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import ConfirmModal from '../components/ConfirmModal';
 
 const EMPTY_FORM = {
   categoryId: '',
@@ -23,6 +24,7 @@ export default function AdminMenuPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   const load = useCallback(async () => {
     const [cats, list] = await Promise.all([api.getAdminCategories(), api.getAdminProducts()]);
@@ -123,26 +125,46 @@ export default function AdminMenuPage() {
     }
   }
 
-  async function toggleActive(product) {
-    setError('');
-    setSuccess('');
-    try {
-      const result = await api.setAdminProductActive(product.id, !product.is_active);
-      setSuccess(result.message);
-      await load();
-    } catch (err) {
-      setError(err.message);
-    }
+  function askToggle(product) {
+    setConfirm({
+      type: 'toggle',
+      product,
+      title: product.is_active ? 'Desactivar plato' : 'Activar plato',
+      message: product.is_active
+        ? `"${product.name}" desaparecerá del menú de clientes.`
+        : `"${product.name}" volverá a mostrarse en el catálogo.`,
+      confirmLabel: product.is_active ? 'Desactivar' : 'Activar',
+      danger: product.is_active,
+    });
   }
 
-  async function removeProduct(product) {
-    if (!window.confirm(`¿Ocultar "${product.name}" del menú de clientes?`)) return;
+  function askDelete(product) {
+    setConfirm({
+      type: 'delete',
+      product,
+      title: 'Eliminar plato',
+      message: `¿Ocultar "${product.name}" del menú de clientes?`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    });
+  }
+
+  async function runConfirm() {
+    if (!confirm?.product) return;
+    const { type, product } = confirm;
+    setConfirm(null);
     setError('');
     setSuccess('');
+
     try {
-      const result = await api.deleteAdminProduct(product.id);
-      setSuccess(result.message);
-      if (editingId === product.id) startCreate();
+      if (type === 'toggle') {
+        const result = await api.setAdminProductActive(product.id, !product.is_active);
+        setSuccess(result.message);
+      } else if (type === 'delete') {
+        const result = await api.deleteAdminProduct(product.id);
+        setSuccess(result.message);
+        if (editingId === product.id) startCreate();
+      }
       await load();
     } catch (err) {
       setError(err.message);
@@ -340,14 +362,14 @@ export default function AdminMenuPage() {
                     <button
                       type="button"
                       className="btn small"
-                      onClick={() => toggleActive(product)}
+                      onClick={() => askToggle(product)}
                     >
                       {product.is_active ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
                       type="button"
                       className="btn small"
-                      onClick={() => removeProduct(product)}
+                      onClick={() => askDelete(product)}
                     >
                       Eliminar
                     </button>
@@ -358,6 +380,16 @@ export default function AdminMenuPage() {
           </ul>
         </div>
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirm)}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmLabel={confirm?.confirmLabel}
+        danger={confirm?.danger}
+        onCancel={() => setConfirm(null)}
+        onConfirm={runConfirm}
+      />
     </section>
   );
 }

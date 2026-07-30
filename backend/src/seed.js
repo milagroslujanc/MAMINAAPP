@@ -25,6 +25,18 @@ async function seed() {
   if (existing[0].c > 0) {
     const [admins] = await connection.query('SELECT COUNT(*) AS c FROM admins');
     if (admins[0].c > 0) {
+      // Migración ligera: columna is_active en mesas (MMN-19)
+      const [cols] = await connection.query(
+        `SELECT COUNT(*) AS c FROM information_schema.columns
+         WHERE table_schema = ? AND table_name = 'tables' AND column_name = 'is_active'`,
+        [dbName]
+      );
+      if (cols[0].c === 0) {
+        await connection.query(
+          `ALTER TABLE \`tables\` ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER qr_token`
+        );
+        console.log('Migración: columna tables.is_active agregada.');
+      }
       console.log('Base de datos ya inicializada — se omite el seed.');
       await connection.end();
       return;
@@ -54,6 +66,7 @@ async function seed() {
       capacity INT NOT NULL DEFAULT 4,
       status ENUM('libre', 'ocupada') NOT NULL DEFAULT 'libre',
       qr_token VARCHAR(64) NULL UNIQUE,
+      is_active TINYINT(1) NOT NULL DEFAULT 1,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
 

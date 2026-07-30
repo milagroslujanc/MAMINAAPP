@@ -53,12 +53,14 @@ export default function AdminHomePage() {
       <p className="eyebrow">Bienvenido</p>
       <h1>{admin.fullName || admin.username}</h1>
       <p className="muted">
-        Panel del administrador. Gestiona el menú del restaurante (MMN-18) o revisa recepción y
-        cocina.
+        Panel del administrador. Gestiona menú (MMN-18) y mesas del salón (MMN-19).
       </p>
       <div className="admin-actions">
         <Link className="btn primary" to="/admin/menu">
           Gestionar menú
+        </Link>
+        <Link className="btn primary" to="/admin/mesas">
+          Gestionar mesas
         </Link>
         <Link className="btn" to="/">
           Ver recepción
