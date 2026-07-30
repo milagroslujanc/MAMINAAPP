@@ -103,6 +103,19 @@ export default function KitchenPage() {
     }
   }
 
+  async function markReady() {
+    if (!selected || selected.status !== 'en_preparacion') return;
+    try {
+      const detail = await api.updateKitchenOrderStatus(selected.id, 'listo');
+      setSelected(detail);
+      setFlash(`Pedido #${selected.id} listo`);
+      window.setTimeout(() => setFlash(''), 4000);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <section className="kitchen">
       <div className="kitchen-header">
@@ -184,6 +197,15 @@ export default function KitchenPage() {
                   onClick={markPreparing}
                 >
                   Marcar como en preparación
+                </button>
+              )}
+              {selected.status === 'en_preparacion' && (
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={markReady}
+                >
+                  Marcar como listo
                 </button>
               )}
               <p className="total-row">
