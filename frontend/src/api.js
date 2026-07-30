@@ -39,6 +39,12 @@ export const api = {
     request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }),
   getKitchenOrders: () => request('/api/kitchen'),
   getKitchenOrder: (id) => request(`/api/kitchen/${id}`),
+  // se añadio el status
+  updateKitchenOrderStatus: (id, status) =>
+    request(`/api/kitchen/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   kitchenStreamUrl: () => `${API_BASE}/api/kitchen/stream`,
   login: (username, password) =>
     request('/api/auth/login', {
