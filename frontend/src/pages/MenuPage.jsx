@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 
 const CART_KEY = 'mamina_cart';
+const STATUS_LABELS = {
+  pendiente: 'Pendiente',
+  en_preparacion: 'En preparación',
+  listo: 'Listo',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado',
+};
 
 function loadSession() {
   try {
@@ -20,10 +27,19 @@ function loadCart() {
   }
 }
 
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function MenuPage() {
   const [session] = useState(loadSession);
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState(loadCart);
+  const [activeOrder, setActiveOrder] = useState(null);
+  const [selectedTab, setSelectedTab] = useState('menu');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [sending, setSending] = useState(false);
@@ -34,7 +50,14 @@ export default function MenuPage() {
       .getMenu()
       .then(setMenu)
       .catch((err) => setError(err.message));
+    loadActiveOrder();
   }, []);
+
+  useEffect(() => {
+    if (selectedTab === 'status') {
+      loadActiveOrder();
+    }
+  }, [selectedTab]);
 
   useEffect(() => {
     sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -46,6 +69,21 @@ export default function MenuPage() {
   );
 
   const count = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+
+  async function loadActiveOrder() {
+    if (!session?.sessionToken) return;
+    try {
+      const order = await api.getActiveOrder(session.sessionToken);
+      setActiveOrder(order);
+      setError('');
+    } catch (err) {
+      if (err.message === 'Pedido no encontrado') {
+        setActiveOrder(null);
+      } else {
+        setError(err.message);
+      }
+    }
+  }
 
   function addToCart(product) {
     if (product.agotado) return;
@@ -113,6 +151,9 @@ export default function MenuPage() {
           : `Ítems agregados al pedido #${result.orderId}. Total acumulado S/ ${Number(result.total).toFixed(2)}`
       );
       setShowCart(false);
+      setCart([]);
+      sessionStorage.removeItem(CART_KEY);
+      loadActiveOrder();
       const fresh = await api.getMenu();
       setMenu(fresh);
     } catch (err) {
@@ -152,42 +193,88 @@ export default function MenuPage() {
         </button>
       </div>
 
+      <div className="menu-tabs">
+        <button
+          type="button"
+          className={`tab-button ${selectedTab === 'menu' ? 'active' : ''}`}
+          onClick={() => setSelectedTab('menu')}
+        >
+          Menú
+        </button>
+        <button
+          type="button"
+          className={`tab-button ${selectedTab === 'status' ? 'active' : ''}`}
+          onClick={() => setSelectedTab('status')}
+        >
+          Estado de Pedido
+        </button>
+      </div>
+
       {error && <div className="alert">{error}</div>}
       {success && <div className="alert ok">{success}</div>}
 
-      {menu.map((category) => (
-        <div key={category.id} className="category-block">
-          <h2>{category.name}</h2>
-          <div className="product-list">
-            {category.products.map((product) => (
-              <article
-                key={product.id}
-                className={`product-row ${product.agotado ? 'agotado' : ''}`}
-              >
-                <img src={product.image_url} alt="" loading="lazy" />
-                <div className="product-info">
-                  <div className="product-title-row">
-                    <h3>{product.name}</h3>
-                    {product.agotado && <span className="badge-agotado">Agotado</span>}
+      {selectedTab === 'menu' ? (
+        menu.map((category) => (
+          <div key={category.id} className="category-block">
+            <h2>{category.name}</h2>
+            <div className="product-list">
+              {category.products.map((product) => (
+                <article
+                  key={product.id}
+                  className={`product-row ${product.agotado ? 'agotado' : ''}`}
+                >
+                  <img src={product.image_url} alt="" loading="lazy" />
+                  <div className="product-info">
+                    <div className="product-title-row">
+                      <h3>{product.name}</h3>
+                      {product.agotado && <span className="badge-agotado">Agotado</span>}
+                    </div>
+                    <p>{product.description}</p>
+                    <div className="product-actions">
+                      <strong>S/ {Number(product.price).toFixed(2)}</strong>
+                      <button
+                        type="button"
+                        className="btn small"
+                        disabled={product.agotado}
+                        onClick={() => addToCart(product)}
+                      >
+                        Agregar
+                      </button>
+                    </div>
                   </div>
-                  <p>{product.description}</p>
-                  <div className="product-actions">
-                    <strong>S/ {Number(product.price).toFixed(2)}</strong>
-                    <button
-                      type="button"
-                      className="btn small"
-                      disabled={product.agotado}
-                      onClick={() => addToCart(product)}
-                    >
-                      Agregar
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      ) : (
+        <section className="order-status-panel">
+          <div className="status-panel-head">
+            <h2>Estado de tu pedido</h2>
+            <button type="button" className="btn small" onClick={loadActiveOrder}>
+              Actualizar
+            </button>
+          </div>
+          {activeOrder ? (
+            <div className="status-card">
+              <p className="eyebrow">Pedido #{activeOrder.id}</p>
+              <p className="status-pill">{STATUS_LABELS[activeOrder.status] || activeOrder.status}</p>
+              <p>
+                {activeOrder.order_type === 'llevar'
+                  ? 'Pedido para llevar'
+                  : `Mesa ${activeOrder.table_number ?? '—'}`}
+              </p>
+              <p className="muted">{formatTime(activeOrder.created_at)}</p>
+              <p className="total-row">
+                <span>Total</span>
+                <strong>S/ {Number(activeOrder.total).toFixed(2)}</strong>
+              </p>
+            </div>
+          ) : (
+            <p className="muted">Aún no tienes un pedido activo.</p>
+          )}
+        </section>
+      )}
 
       {showCart && (
         <aside className="cart-drawer">
