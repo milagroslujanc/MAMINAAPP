@@ -107,7 +107,11 @@ export default function MenuPage() {
       });
       setCart([]);
       sessionStorage.removeItem(CART_KEY);
-      setSuccess(`Pedido #${result.orderId} enviado a cocina. Total S/ ${Number(result.total).toFixed(2)}`);
+      setSuccess(
+        result.isNewOrder
+          ? `Pedido #${result.orderId} enviado a cocina. Total S/ ${Number(result.total).toFixed(2)}`
+          : `Ítems agregados al pedido #${result.orderId}. Total acumulado S/ ${Number(result.total).toFixed(2)}`
+      );
       setShowCart(false);
       const fresh = await api.getMenu();
       setMenu(fresh);

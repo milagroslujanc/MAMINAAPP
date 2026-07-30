@@ -5,6 +5,39 @@ const { asyncHandler } = require('../utils');
 
 const router = express.Router();
 
+async function recalcTotal(conn, orderId) {
+  const [sumRows] = await conn.query(
+    `SELECT COALESCE(SUM(quantity * unit_price), 0) AS total FROM order_items WHERE order_id = ?`,
+    [orderId]
+  );
+  const total = Number(sumRows[0].total);
+  await conn.query(`UPDATE orders SET total = ? WHERE id = ?`, [total, orderId]);
+  return total;
+}
+
+async function upsertOrderItem(conn, orderId, product, qty, specialNotes) {
+  const [existing] = await conn.query(
+    `SELECT id, quantity FROM order_items
+     WHERE order_id = ? AND product_id = ? AND (special_notes <=> ?)`,
+    [orderId, product.id, specialNotes || null]
+  );
+
+  if (existing[0]) {
+    await conn.query(`UPDATE order_items SET quantity = quantity + ? WHERE id = ?`, [
+      qty,
+      existing[0].id,
+    ]);
+  } else {
+    await conn.query(
+      `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, special_notes)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [orderId, product.id, product.name, qty, product.price, specialNotes || null]
+    );
+  }
+
+  await conn.query('UPDATE products SET stock = stock - ? WHERE id = ?', [qty, product.id]);
+}
+
 router.post(
   '/',
   asyncHandler(async (req, res) => {
@@ -29,7 +62,6 @@ router.post(
         return res.status(404).json({ message: 'Sesión inválida' });
       }
 
-      let total = 0;
       const resolved = [];
 
       for (const item of items) {
@@ -51,16 +83,71 @@ router.post(
           await conn.rollback();
           return res.status(400).json({ message: `Stock insuficiente de ${product.name}` });
         }
-        total += Number(product.price) * qty;
         resolved.push({ product, quantity: qty, specialNotes: item.specialNotes || null });
+      }
+
+      const [existingOrders] = await conn.query(
+        `SELECT id, status, notes FROM orders
+         WHERE session_id = ? AND status NOT IN ('cancelado', 'entregado')
+         ORDER BY id DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [session.id]
+      );
+
+      let orderId;
+      let orderStatus = 'pendiente';
+      let orderNotes = notes || null;
+
+      if (existingOrders[0]) {
+        orderId = existingOrders[0].id;
+        orderStatus = existingOrders[0].status;
+
+        if (notes) {
+          orderNotes = existingOrders[0].notes
+            ? `${existingOrders[0].notes}\n${notes}`
+            : notes;
+        } else {
+          orderNotes = existingOrders[0].notes;
+        }
+
+        for (const row of resolved) {
+          await upsertOrderItem(conn, orderId, row.product, row.quantity, row.specialNotes);
+        }
+
+        const total = await recalcTotal(conn, orderId);
+        const nextStatus = orderStatus === 'listo' ? 'pendiente' : orderStatus;
+
+        await conn.query(
+          `UPDATE orders SET notes = ?, status = ?, is_new = 1 WHERE id = ?`,
+          [orderNotes, nextStatus, orderId]
+        );
+
+        await conn.commit();
+        orderStatus = nextStatus;
+
+        bus.emit('order:updated', { id: orderId });
+
+        return res.status(200).json({
+          orderId,
+          total,
+          status: orderStatus,
+          isNewOrder: false,
+          message: `Ítems agregados al pedido #${orderId}`,
+        });
+      }
+
+      let batchTotal = 0;
+      for (const row of resolved) {
+        batchTotal += Number(row.product.price) * row.quantity;
       }
 
       const [orderResult] = await conn.query(
         `INSERT INTO orders (session_id, table_id, order_type, status, total, notes, is_new)
          VALUES (?, ?, ?, 'pendiente', ?, ?, 1)`,
-        [session.id, session.table_id, session.order_type, total, notes || null]
+        [session.id, session.table_id, session.order_type, batchTotal, notes || null]
       );
-      const orderId = orderResult.insertId;
+      orderId = orderResult.insertId;
 
       for (const row of resolved) {
         await conn.query(
@@ -94,7 +181,7 @@ router.post(
       bus.emit('order:new', {
         id: orderId,
         status: 'pendiente',
-        total: Number(total),
+        total: Number(batchTotal),
         order_type: session.order_type,
         is_new: true,
         notes: notes || null,
@@ -104,8 +191,9 @@ router.post(
 
       res.status(201).json({
         orderId,
-        total: Number(total),
+        total: Number(batchTotal),
         status: 'pendiente',
+        isNewOrder: true,
         message: 'Pedido enviado a cocina',
       });
     } catch (err) {

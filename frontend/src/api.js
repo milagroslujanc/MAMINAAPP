@@ -69,4 +69,25 @@ export const api = {
       body: JSON.stringify({ isActive }),
     }),
   deleteAdminTable: (id) => request(`/api/admin/tables/${id}`, { method: 'DELETE' }),
+  getAdminOrders: () => request('/api/admin/orders'),
+  getAdminOrder: (id) => request(`/api/admin/orders/${id}`),
+  cancelAdminOrder: (id) =>
+    request(`/api/admin/orders/${id}/cancel`, { method: 'POST' }),
+  updateOrderNotes: (id, notes) =>
+    request(`/api/admin/orders/${id}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    }),
+  addOrderItem: (id, payload) =>
+    request(`/api/admin/orders/${id}/items`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateOrderItem: (orderId, itemId, payload) =>
+    request(`/api/admin/orders/${orderId}/items/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  removeOrderItem: (orderId, itemId) =>
+    request(`/api/admin/orders/${orderId}/items/${itemId}`, { method: 'DELETE' }),
 };

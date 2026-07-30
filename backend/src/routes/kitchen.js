@@ -18,7 +18,11 @@ router.get('/stream', (req, res) => {
   send({ type: 'connected' });
 
   const onOrder = (order) => send({ type: 'order', order });
+  const onCancel = (payload) => send({ type: 'order_cancelled', orderId: payload.id });
+  const onUpdate = (payload) => send({ type: 'order_updated', orderId: payload.id });
   bus.on('order:new', onOrder);
+  bus.on('order:cancelled', onCancel);
+  bus.on('order:updated', onUpdate);
 
   const heartbeat = setInterval(() => {
     res.write(': ping\n\n');
@@ -27,6 +31,8 @@ router.get('/stream', (req, res) => {
   req.on('close', () => {
     clearInterval(heartbeat);
     bus.off('order:new', onOrder);
+    bus.off('order:cancelled', onCancel);
+    bus.off('order:updated', onUpdate);
   });
 });
 
