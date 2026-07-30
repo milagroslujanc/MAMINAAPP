@@ -24,6 +24,7 @@ CREATE TABLE tables (
   capacity INT NOT NULL DEFAULT 4,
   status ENUM('libre', 'ocupada') NOT NULL DEFAULT 'libre',
   qr_token VARCHAR(64) NULL UNIQUE,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 

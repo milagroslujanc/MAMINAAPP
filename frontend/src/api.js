@@ -58,4 +58,15 @@ export const api = {
       body: JSON.stringify({ isActive }),
     }),
   deleteAdminProduct: (id) => request(`/api/admin/products/${id}`, { method: 'DELETE' }),
+  getAdminTables: () => request('/api/admin/tables'),
+  createAdminTable: (payload) =>
+    request('/api/admin/tables', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAdminTable: (id, payload) =>
+    request(`/api/admin/tables/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  setAdminTableActive: (id, isActive) =>
+    request(`/api/admin/tables/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    }),
+  deleteAdminTable: (id) => request(`/api/admin/tables/${id}`, { method: 'DELETE' }),
 };

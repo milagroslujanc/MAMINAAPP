@@ -21,8 +21,9 @@ Sistema web interactivo de pedidos para el restaurante **La Mamina**.
 | MMN-12 | Detalle del pedido + notas | Done | `/cocina` · `GET /api/kitchen/:id` |
 | MMN-16 | Login administrador + JWT | Done | `/admin` · `POST /api/auth/login` · `GET /api/auth/me` |
 | MMN-18 | Gestionar menú (CRUD platos) | Done | `/admin/menu` · `/api/admin/products` |
+| MMN-19 | Gestionar mesas (CRUD) | Done | `/admin/mesas` · `/api/admin/tables` |
 
-> Persistencia en **MySQL**. El menú de clientes (`GET /api/menu`) solo muestra platos **activos**. Desactivar un plato en el panel lo oculta del catálogo de inmediato.
+> Persistencia en **MySQL**. El menú de clientes (`GET /api/menu`) solo muestra platos **activos**. La recepción (`GET /api/tables`) solo muestra mesas **activas**. Desactivar mesa/plato impide nuevos pedidos desde ese recurso.
 
 ## Requisitos
 
