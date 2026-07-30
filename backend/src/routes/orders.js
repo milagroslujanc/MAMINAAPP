@@ -205,4 +205,50 @@ router.post(
   })
 );
 
+router.get(
+  '/active',
+  asyncHandler(async (req, res) => {
+    const sessionToken = req.query.sessionToken;
+    if (!sessionToken) {
+      return res.status(400).json({ message: 'sessionToken es obligatorio' });
+    }
+
+    const [sessions] = await pool.query(
+      "SELECT id FROM sessions WHERE token = ? AND status = 'activa'",
+      [sessionToken]
+    );
+    if (!sessions[0]) {
+      return res.status(404).json({ message: 'Sesión inválida' });
+    }
+
+    const sessionId = sessions[0].id;
+    const [orders] = await pool.query(
+      `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at, o.table_id
+       FROM orders o
+       WHERE o.session_id = ? AND o.status NOT IN ('cancelado', 'entregado')
+       ORDER BY o.created_at DESC
+       LIMIT 1`,
+      [sessionId]
+    );
+
+    const order = orders[0];
+    if (!order) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    const [tables] = await pool.query('SELECT number FROM `tables` WHERE id = ?', [order.table_id]);
+    const tableNumber = tables[0]?.number ?? null;
+
+    res.json({
+      id: order.id,
+      status: order.status,
+      total: Number(order.total),
+      order_type: order.order_type,
+      notes: order.notes,
+      created_at: order.created_at,
+      table_number: tableNumber,
+    });
+  })
+);
+
 module.exports = router;

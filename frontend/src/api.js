@@ -37,8 +37,16 @@ export const api = {
   getMenu: () => request('/api/menu'),
   createOrder: (payload) =>
     request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }),
+  getActiveOrder: (sessionToken) =>
+    request(`/api/orders/active?sessionToken=${encodeURIComponent(sessionToken)}`),
   getKitchenOrders: () => request('/api/kitchen'),
   getKitchenOrder: (id) => request(`/api/kitchen/${id}`),
+  // se añadio el status
+  updateKitchenOrderStatus: (id, status) =>
+    request(`/api/kitchen/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   kitchenStreamUrl: () => `${API_BASE}/api/kitchen/stream`,
   login: (username, password) =>
     request('/api/auth/login', {
