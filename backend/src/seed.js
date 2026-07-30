@@ -132,26 +132,86 @@ async function seed() {
 
   await connection.query(
     `INSERT INTO categories (name, sort_order) VALUES
-      ('Entradas', 1),
-      ('Platos de Fondo', 2),
-      ('Bebidas', 3),
-      ('Postres', 4)`
+    ('Anticuchos', 1),
+    ('Combinados', 2),
+    ('1/2 porción', 3),
+    ('Carnes a la parrilla', 4),
+    ('Complementos', 5),
+    ('Infuciones / Bebidas', 6),
+    ('Gaseosas', 7),
+    ('Vinos', 8),
+    ('Cervezas', 9);`
   );
 
   await connection.query(
     `INSERT INTO products (category_id, name, description, price, image_url, stock, is_active) VALUES
-      (1, 'Ceviche Clásico', 'Pescado fresco marinado en limón con cebolla y ají', 28.00, 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=400', 20, 1),
-      (1, 'Tequeños', 'Deditos de queso envueltos en masa crujiente (6 und)', 16.00, 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400', 15, 1),
-      (1, 'Papa a la Huancaína', 'Papas con crema de ají amarillo', 14.00, 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400', 0, 1),
-      (2, 'Lomo Saltado', 'Lomo salteado con cebolla, tomate y papas fritas', 32.00, 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400', 18, 1),
-      (2, 'Ají de Gallina', 'Pechuga deshilachada en salsa de ají amarillo', 26.00, 'https://images.unsplash.com/photo-1604908177522-040703ecce6a?w=400', 12, 1),
-      (2, 'Arroz con Mariscos', 'Arroz cremoso con mariscos frescos', 34.00, 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400', 10, 1),
-      (2, 'Anticuchos', 'Brochetas de corazón a la parrilla con papas', 24.00, 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400', 0, 1),
-      (3, 'Chicha Morada', 'Bebida tradicional de maíz morado (jarra)', 12.00, 'https://images.unsplash.com/photo-1544145945-f904253e1e73?w=400', 30, 1),
-      (3, 'Inca Kola', 'Gaseosa 500 ml', 5.00, 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400', 40, 1),
-      (3, 'Café Americano', 'Café filtrado', 6.00, 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400', 25, 1),
-      (4, 'Suspiro Limeño', 'Manjar blanco con merengue', 12.00, 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400', 8, 1),
-      (4, 'Mazamorra Morada', 'Postre de maíz morado con frutas', 10.00, 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400', 5, 1)`
+-- Categoría 1: Anticuchos
+(1, 'Anticucho (3 palitos)', '3 palitos de anticucho + papas + choclo + ensalada + cremas', 20.00, 'Anticucho_3_palitos_sjtzon', 20, 1),
+(1, 'Anticucho (4 palitos)', '4 palitos de anticucho + papas + choclo + ensalada + cremas', 22.00, 'URL_IMAGEN', 20, 1),
+(1, 'Anticucho de Carne', '3 palitos de anticucho + papas + choclo + ensalada + cremas', 24.00, 'URL_IMAGEN', 20, 1),
+(1, 'Anticucho de Pollo', '3 palitos de anticucho + papas + choclo + ensalada + cremas', 21.00, 'URL_IMAGEN', 20, 1),
+(1, 'Anticucho 3 Sabores', '1 palito de pollo + 1 palito de carne + 1 palito de corazón + papas + choclo + ensalada + cremas', 22.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 2: Combinados
+(2, 'Combinado', '2 palitos de anticucho + rachi + corazón + mollejita + papas + choclo + ensalada + cremas', 20.00, 'URL_IMAGEN', 20, 1),
+(2, 'Dúo', '2 palitos de anticucho + choncholí + papas + choclo + ensalada + cremas', 21.00, 'URL_IMAGEN', 20, 1),
+(2, 'Choncholí', '+ papas + choclo + ensalada + cremas', 21.00, 'URL_IMAGEN', 20, 1),
+(2, 'Rachi', '+ papas + choclo + ensalada + cremas', 20.00, 'URL_IMAGEN', 20, 1),
+(2, 'Molleja', '+ papas + choclo + ensalada + cremas', 20.00, 'URL_IMAGEN', 20, 1),
+(2, 'Corazón de pollo', '+ papas + choclo + ensalada + cremas', 20.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 3: 1/2 Porción
+(3, 'Anticucho (1/2 porción)', '2 palitos de anticucho + papas + choclo + ensalada + cremas', 14.00, 'URL_IMAGEN', 20, 1),
+(3, 'Choncholí (1/2 porción)', '+ papas + choclo + ensalada + cremas', 16.00, 'URL_IMAGEN', 20, 1),
+(3, 'Rachi (1/2 porción)', '+ papas + choclo + ensalada + cremas', 15.00, 'URL_IMAGEN', 20, 1),
+(3, 'Molleja (1/2 porción)', '+ papas + choclo + ensalada + cremas', 15.00, 'URL_IMAGEN', 20, 1),
+(3, 'Corazón de pollo (1/2 porción)', '+ papas + choclo + ensalada + cremas', 15.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 4: Carnes a la Parrilla
+(4, 'Pollo ó Churrasco ó Chuleta "La Mamina"', '+ 2 palitos anticucho + rachi + corazón + mollejita + hot dog + chorizo + papas + choclo + ensalada + cremas', 46.00, 'URL_IMAGEN', 20, 1),
+(4, 'Filete de Pollo c/ Chorizo y Hot Dog', '+ papas + choclo + ensalada + cremas', 25.00, 'URL_IMAGEN', 20, 1),
+(4, 'Muslo de pollo c/ Chorizo y Hot Dog', '+ papas + choclo + ensalada + cremas', 25.00, 'URL_IMAGEN', 20, 1),
+(4, 'Chuleta c/ Chorizo y Hot Dog', '+ papas + choclo + ensalada + cremas', 27.00, 'URL_IMAGEN', 20, 1),
+(4, 'Churrasco c/ Chorizo y Hot Dog', '+ papas + choclo + ensalada + cremas', 29.00, 'URL_IMAGEN', 20, 1),
+(4, 'Filete de pollo', '+ papas + choclo + ensalada + cremas', 20.00, 'URL_IMAGEN', 20, 1),
+(4, 'Muslo Deshuesado de Pollo', '+ papas + choclo + ensalada + cremas', 20.00, 'URL_IMAGEN', 20, 1),
+(4, 'Churrasco', '+ papas + choclo + ensalada + cremas', 23.00, 'URL_IMAGEN', 20, 1),
+(4, 'Chuleta', '+ papas + choclo + ensalada + cremas', 22.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 5: Complementos
+(5, 'Arroz', 'Porción de arroz', 3.00, 'URL_IMAGEN', 20, 1),
+(5, 'Papa sancochada', 'Porción de papa sancochada', 2.50, 'URL_IMAGEN', 20, 1),
+(5, 'Papa frita', 'Porción de papa frita', 10.00, 'URL_IMAGEN', 20, 1),
+(5, 'Choclo', 'Porción de choclo', 2.50, 'URL_IMAGEN', 20, 1),
+(5, 'Ensalada', 'Porción de ensalada fresca', 6.00, 'URL_IMAGEN', 20, 1),
+(5, 'Chorizo', 'Unidad de chorizo', 6.00, 'URL_IMAGEN', 20, 1),
+(5, 'Hot Dog', 'Unidad de hot dog', 3.00, 'URL_IMAGEN', 20, 1),
+(5, 'Frankfrutter', 'Unidad de salchicha frankfurter', 6.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 6: Infusiones / Bebidas
+(6, 'Infusiones', 'Bebida caliente', 4.00, 'URL_IMAGEN', 20, 1),
+(6, 'Café', 'Taza de café', 5.00, 'URL_IMAGEN', 20, 1),
+(6, 'Jarra de Chicha 1 Lt.', 'Jarra de un litro de chicha', 10.00, 'URL_IMAGEN', 20, 1),
+(6, 'Jarra de Chicha 1/2 Lt.', 'Jarra de medio litro de chicha', 5.50, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 7: Gaseosas
+(7, 'Coca Cola / Inka Cola 1Lt.', 'Gaseosa de 1 litro', 10.00, 'URL_IMAGEN', 20, 1),
+(7, 'Coca Cola / Inka Cola 1.5 Lt.', 'Gaseosa de 1.5 litros', 13.00, 'URL_IMAGEN', 20, 1),
+(7, 'Coca Cola / Inka Cola 3 Lt.', 'Gaseosa de 3 litros', 18.00, 'URL_IMAGEN', 20, 1),
+(7, 'Gordita', 'Gaseosa presentación gordita', 5.50, 'URL_IMAGEN', 20, 1),
+(7, 'Mediana', 'Gaseosa presentación mediana', 3.50, 'URL_IMAGEN', 20, 1),
+(7, 'Agua mineral', 'Botella de agua mineral', 3.50, 'URL_IMAGEN', 20, 1),
+(7, 'Frugos', 'Jugo envasado', 3.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 8: Vinos
+(8, 'Tabernero Rosé y Borgoña', 'Vino Tabernero', 36.00, 'URL_IMAGEN', 20, 1),
+(8, 'Tabernero Rosé especial', 'Vino Tabernero edición especial', 45.00, 'URL_IMAGEN', 20, 1),
+(8, 'Santiago Queirolo Borgoña', 'Vino Santiago Queirolo', 36.00, 'URL_IMAGEN', 20, 1),
+
+-- Categoría 9: Cervezas
+(9, 'Pilsen personal', 'Cerveza Pilsen tamaño personal', 8.00, 'URL_IMAGEN', 20, 1),
+(9, 'Cusqueña personal', 'Cerveza Cusqueña tamaño personal', 8.00, 'URL_IMAGEN', 20, 1),
+(9, 'Variados', 'Otras marcas de cerveza', 9.00, 'URL_IMAGEN', 20, 1);`
   );
 
   console.log('Base de datos mamina creada y sembrada correctamente.');
