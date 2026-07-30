@@ -15,6 +15,7 @@ CREATE TABLE admins (
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(100) NOT NULL,
+  role ENUM('admin', 'mesero') NOT NULL DEFAULT 'admin',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

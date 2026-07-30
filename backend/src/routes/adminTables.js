@@ -1,11 +1,11 @@
 const express = require('express');
 const pool = require('../config/db');
-const { authAdmin } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/auth');
 const { asyncHandler } = require('../utils');
 
 const router = express.Router();
 
-router.use(authAdmin);
+router.use(requireAdmin);
 
 function mapTable(row) {
   return {

@@ -49,6 +49,24 @@ export default function KitchenPage() {
             window.setTimeout(() => setFlash(''), 4000);
           }
         }
+        if (payload.type === 'order_cancelled' && payload.orderId) {
+          setOrders((prev) => prev.filter((o) => o.id !== payload.orderId));
+          knownIds.current.delete(payload.orderId);
+          setSelected((cur) => (cur?.id === payload.orderId ? null : cur));
+          setFlash(`Pedido #${payload.orderId} cancelado`);
+          window.setTimeout(() => setFlash(''), 4000);
+        }
+        if (payload.type === 'order_updated' && payload.orderId) {
+          load();
+          setFlash(`Pedido #${payload.orderId} actualizado`);
+          window.setTimeout(() => setFlash(''), 4000);
+          setSelected((cur) => {
+            if (cur?.id === payload.orderId) {
+              api.getKitchenOrder(payload.orderId).then(setSelected).catch(() => {});
+            }
+            return cur;
+          });
+        }
       } catch {
         /* ignore malformed SSE */
       }

@@ -1,6 +1,12 @@
 const jwt = require('jsonwebtoken');
 
-function authAdmin(req, res, next) {
+function normalizeRole(payload) {
+  if (payload?.role === 'admin' || payload?.role === 'mesero') return payload.role;
+  if (payload?.username === 'mesero') return 'mesero';
+  return 'admin';
+}
+
+function authStaff(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
 
@@ -10,11 +16,37 @@ function authAdmin(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET || 'mamina_sprint1_secret_change_me');
-    req.admin = payload;
+    const role = normalizeRole(payload);
+    req.admin = { ...payload, role };
+    req.staff = { ...payload, role };
     next();
   } catch {
     return res.status(401).json({ message: 'Sesión inválida o expirada' });
   }
 }
 
-module.exports = { authAdmin };
+/** Solo administrador (acceso total) */
+function requireAdmin(req, res, next) {
+  authStaff(req, res, () => {
+    if (req.staff?.role !== 'admin') {
+      return res.status(403).json({
+        message: 'Tu perfil de mesero solo puede gestionar pedidos. Entra por /mesero',
+      });
+    }
+    next();
+  });
+}
+
+/** Admin o mesero (gestión de pedidos) */
+function requireStaff(req, res, next) {
+  authStaff(req, res, () => {
+    if (!['admin', 'mesero'].includes(req.staff?.role)) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+    next();
+  });
+}
+
+const authAdmin = requireAdmin;
+
+module.exports = { authStaff, requireAdmin, requireStaff, authAdmin, normalizeRole };

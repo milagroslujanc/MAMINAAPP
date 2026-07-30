@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import ConfirmModal from '../components/ConfirmModal';
+import { clearStaffSession, homeForRole } from '../auth';
 
 const EMPTY_FORM = {
   categoryId: '',
@@ -41,11 +42,15 @@ export default function AdminMenuPage() {
 
     async function init() {
       try {
-        await api.me();
+        const me = await api.me();
+        if (me.admin?.role !== 'admin') {
+          navigate(homeForRole(me.admin?.role), { replace: true });
+          return;
+        }
         await load();
         if (!cancelled) setReady(true);
       } catch {
-        localStorage.removeItem('mamina_admin');
+        clearStaffSession();
         if (!cancelled) navigate('/admin', { replace: true });
       }
     }

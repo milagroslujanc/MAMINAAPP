@@ -899,16 +899,211 @@ h1 {
   margin: 0.35rem 0 0;
 }
 
+.orders-table-wrap {
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
+}
+
+.orders-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.order-edit-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.1rem;
+  display: grid;
+  gap: 0.75rem;
+  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
+  position: sticky;
+  top: 5rem;
+}
+
+.order-edit-panel label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.order-edit-panel textarea,
+.order-edit-panel select,
+.order-edit-panel input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--gris);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+}
+
+.edit-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.edit-items li {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.add-item-form {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.orders-table .row-selected {
+  background: rgba(144, 16, 32, 0.06);
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.orders-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--gris);
+}
+
+.orders-table .row-cancelled {
+  opacity: 0.65;
+}
+
+.orders-table .status-cell {
+  white-space: nowrap;
+}
+
+.status-label {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.status-label--pendiente {
+  background: rgba(196, 120, 20, 0.14);
+  color: #9a5f08;
+}
+
+.status-label--en_preparacion {
+  background: rgba(30, 100, 180, 0.12);
+  color: #1e5a96;
+}
+
+.status-label--listo {
+  background: rgba(61, 122, 74, 0.15);
+  color: #2f7d4a;
+}
+
+.status-label--entregado {
+  background: rgba(80, 80, 80, 0.12);
+  color: #555;
+}
+
+.status-label--cancelado {
+  background: rgba(217, 76, 106, 0.16);
+  color: var(--borgona);
+}
+
+.orders-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--gris);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--rojo);
+  color: var(--rojo);
+  background: rgba(144, 16, 32, 0.06);
+}
+
+.icon-btn.danger:hover:not(:disabled) {
+  border-color: var(--borgona);
+  color: var(--borgona);
+  background: rgba(217, 76, 106, 0.1);
+}
+
+.icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.icon-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.order-edit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.edit-items .qty-row {
+  align-items: center;
+}
+
 @media (max-width: 820px) {
   .kitchen-layout {
     grid-template-columns: 1fr;
   }
 
-  .admin-menu-layout {
+  .admin-menu-layout,
+  .orders-layout {
     grid-template-columns: 1fr;
   }
 
-  .admin-product-form {
+  .admin-product-form,
+  .order-edit-panel {
     position: static;
   }
 

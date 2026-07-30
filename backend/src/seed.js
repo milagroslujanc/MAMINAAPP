@@ -37,6 +37,35 @@ async function seed() {
         );
         console.log('Migración: columna tables.is_active agregada.');
       }
+
+      // Migración: rol en admins (admin | mesero)
+      const [roleCols] = await connection.query(
+        `SELECT COUNT(*) AS c FROM information_schema.columns
+         WHERE table_schema = ? AND table_name = 'admins' AND column_name = 'role'`,
+        [dbName]
+      );
+      if (roleCols[0].c === 0) {
+        await connection.query(
+          `ALTER TABLE admins ADD COLUMN role ENUM('admin', 'mesero') NOT NULL DEFAULT 'admin' AFTER full_name`
+        );
+        console.log('Migración: columna admins.role agregada.');
+      }
+
+      const meseroHash = await bcrypt.hash('mesero123', 10);
+      await connection.query(
+        `INSERT INTO admins (username, password_hash, full_name, role)
+         SELECT 'mesero', ?, 'Mesero La Mamina', 'mesero'
+         FROM DUAL
+         WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'mesero')`,
+        [meseroHash]
+      );
+      await connection.query(
+        `UPDATE admins SET role = 'mesero', full_name = 'Mesero La Mamina' WHERE username = 'mesero'`
+      );
+      await connection.query(
+        `UPDATE admins SET role = 'admin' WHERE username = 'admin' AND (role IS NULL OR role = '')`
+      );
+
       console.log('Base de datos ya inicializada — se omite el seed.');
       await connection.end();
       return;
@@ -57,6 +86,7 @@ async function seed() {
       username VARCHAR(50) NOT NULL UNIQUE,
       password_hash VARCHAR(255) NOT NULL,
       full_name VARCHAR(100) NOT NULL,
+      role ENUM('admin', 'mesero') NOT NULL DEFAULT 'admin',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -127,10 +157,13 @@ async function seed() {
   `);
 
   const passwordHash = await bcrypt.hash('admin123', 10);
+  const meseroHash = await bcrypt.hash('mesero123', 10);
 
   await connection.query(
-    `INSERT INTO admins (username, password_hash, full_name) VALUES (?, ?, ?)`,
-    ['admin', passwordHash, 'Administrador La Mamina']
+    `INSERT INTO admins (username, password_hash, full_name, role) VALUES
+      (?, ?, ?, 'admin'),
+      (?, ?, ?, 'mesero')`,
+    ['admin', passwordHash, 'Administrador La Mamina', 'mesero', meseroHash, 'Mesero La Mamina']
   );
 
   const tables = Array.from({ length: 13 }, (_, i) => {
