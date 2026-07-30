@@ -20,8 +20,9 @@ Sistema web interactivo de pedidos para el restaurante **La Mamina**.
 | MMN-13 | Pedidos cocina en tiempo real (SSE) | Done | `/cocina` · `GET /api/kitchen` · `/api/kitchen/stream` |
 | MMN-12 | Detalle del pedido + notas | Done | `/cocina` · `GET /api/kitchen/:id` |
 | MMN-16 | Login administrador + JWT | Done | `/admin` · `POST /api/auth/login` · `GET /api/auth/me` |
+| MMN-18 | Gestionar menú (CRUD platos) | Done | `/admin/menu` · `/api/admin/products` |
 
-> Persistencia en **MySQL**. El botón **Enviar a cocina** demuestra MMN-13/MMN-12. La HU formal de “confirmar pedido” (MMN-4) pertenece al Sprint 2.
+> Persistencia en **MySQL**. El menú de clientes (`GET /api/menu`) solo muestra platos **activos**. Desactivar un plato en el panel lo oculta del catálogo de inmediato.
 
 ## Requisitos
 

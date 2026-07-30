@@ -5,6 +5,7 @@ import MenuPage from './pages/MenuPage.jsx';
 import KitchenPage from './pages/KitchenPage.jsx';
 import AdminLoginPage from './pages/AdminLoginPage.jsx';
 import AdminHomePage from './pages/AdminHomePage.jsx';
+import AdminMenuPage from './pages/AdminMenuPage.jsx';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/cocina" element={<KitchenPage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
           <Route path="/admin/panel" element={<AdminHomePage />} />
+          <Route path="/admin/menu" element={<AdminMenuPage />} />
         </Routes>
       </main>
     </div>

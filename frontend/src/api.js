@@ -46,4 +46,16 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
   me: () => request('/api/auth/me'),
+  getAdminCategories: () => request('/api/admin/categories'),
+  getAdminProducts: () => request('/api/admin/products'),
+  createAdminProduct: (payload) =>
+    request('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAdminProduct: (id, payload) =>
+    request(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  setAdminProductActive: (id, isActive) =>
+    request(`/api/admin/products/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    }),
+  deleteAdminProduct: (id) => request(`/api/admin/products/${id}`, { method: 'DELETE' }),
 };
