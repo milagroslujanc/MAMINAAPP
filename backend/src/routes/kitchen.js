@@ -102,7 +102,7 @@ router.patch(
     const orderId = Number(req.params.id);
     const status = req.body?.status;
 
-    if (status !== 'en_preparacion') {
+    if (!['en_preparacion', 'listo'].includes(status)) {
       return res.status(400).json({ message: 'Estado inválido' });
     }
 
@@ -111,11 +111,15 @@ router.patch(
     if (!order) {
       return res.status(404).json({ message: 'Pedido no encontrado' });
     }
-    if (order.status !== 'pendiente') {
+
+    if (status === 'en_preparacion' && order.status !== 'pendiente') {
       return res.status(409).json({ message: 'Solo se puede poner en preparación un pedido pendiente' });
     }
+    if (status === 'listo' && order.status !== 'en_preparacion') {
+      return res.status(409).json({ message: 'Solo se puede marcar listo un pedido en preparación' });
+    }
 
-    await pool.query('UPDATE orders SET status = ?, is_new = 1 WHERE id = ?', [status, orderId]);
+    await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
     bus.emit('order:updated', { id: orderId });
 
     const [detailOrders] = await pool.query(
@@ -144,7 +148,8 @@ router.patch(
       created_at: detailOrder.created_at,
       table_number: detailOrder.table_number ?? null,
       items: items.map((i) => ({ ...i, unit_price: Number(i.unit_price) })),
-      message: 'Pedido en preparación',
+      message:
+        status === 'listo' ? 'Pedido marcado como listo' : 'Pedido en preparación',
     });
   })
 );
