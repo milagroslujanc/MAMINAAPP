@@ -53,17 +53,20 @@ export default function AdminHomePage() {
       <p className="eyebrow">Bienvenido</p>
       <h1>{admin.fullName || admin.username}</h1>
       <p className="muted">
-        Autenticación completada (MMN-16). El dashboard y la gestión de menú/mesas llegan en
-        sprints siguientes.
+        Panel del administrador. Gestiona el menú del restaurante (MMN-18) o revisa recepción y
+        cocina.
       </p>
       <div className="admin-actions">
+        <Link className="btn primary" to="/admin/menu">
+          Gestionar menú
+        </Link>
         <Link className="btn" to="/">
           Ver recepción
         </Link>
         <Link className="btn" to="/cocina">
           Ver cocina
         </Link>
-        <button type="button" className="btn primary" onClick={logout}>
+        <button type="button" className="btn" onClick={logout}>
           Cerrar sesión
         </button>
       </div>
