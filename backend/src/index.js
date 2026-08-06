@@ -15,9 +15,20 @@ const adminOrdersRoutes = require('./routes/adminOrders');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+const frontendOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin(origin, callback) {
+      // Permite tools sin Origin (health checks, curl) y orígenes listados
+      if (!origin || frontendOrigins.includes(origin) || frontendOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
   })
 );
 app.use(express.json());

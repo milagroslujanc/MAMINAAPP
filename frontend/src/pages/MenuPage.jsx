@@ -48,7 +48,7 @@ export default function MenuPage() {
   useEffect(() => {
     api
       .getMenu()
-      .then(setMenu)
+      .then((data) => setMenu(Array.isArray(data) ? data : []))
       .catch((err) => setError(err.message));
     loadActiveOrder();
   }, []);

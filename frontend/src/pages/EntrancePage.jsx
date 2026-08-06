@@ -14,7 +14,10 @@ export default function EntrancePage() {
     try {
       setError('');
       const data = await api.getTables();
-      setTables(data);
+      setTables(Array.isArray(data) ? data : []);
+      if (!Array.isArray(data)) {
+        setError('El API no devolvió la lista de mesas. Revisa VITE_API_URL y que el backend esté arriba.');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

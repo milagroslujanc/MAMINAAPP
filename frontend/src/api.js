@@ -21,7 +21,18 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  const data = await res.json().catch(() => ({}));
+  const text = await res.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(
+      API_BASE
+        ? 'Respuesta inválida del API'
+        : 'No se pudo hablar con el API. Configura VITE_API_URL con la URL del backend en Railway (variable de build) y vuelve a desplegar el frontend.'
+    );
+  }
+
   if (!res.ok) {
     throw new Error(data.message || 'Error de red');
   }

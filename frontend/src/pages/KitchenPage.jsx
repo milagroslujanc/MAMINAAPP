@@ -20,9 +20,10 @@ export default function KitchenPage() {
   const load = useCallback(async () => {
     try {
       const data = await api.getKitchenOrders();
-      setOrders(data);
-      knownIds.current = new Set(data.map((o) => o.id));
-      setError('');
+      const list = Array.isArray(data) ? data : [];
+      setOrders(list);
+      knownIds.current = new Set(list.map((o) => o.id));
+      setError(Array.isArray(data) ? '' : 'Respuesta inválida del API de cocina');
     } catch (err) {
       setError(err.message);
     }
