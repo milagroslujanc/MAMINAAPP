@@ -8,6 +8,9 @@ const sessionsRoutes = require('./routes/sessions');
 const menuRoutes = require('./routes/menu');
 const ordersRoutes = require('./routes/orders');
 const kitchenRoutes = require('./routes/kitchen');
+const adminMenuRoutes = require('./routes/adminMenu');
+const adminTablesRoutes = require('./routes/adminTables');
+const adminOrdersRoutes = require('./routes/adminOrders');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -29,6 +32,9 @@ app.use('/api/sessions', sessionsRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/kitchen', kitchenRoutes);
+app.use('/api/admin', adminOrdersRoutes);
+app.use('/api/admin', adminMenuRoutes);
+app.use('/api/admin', adminTablesRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

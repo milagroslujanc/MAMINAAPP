@@ -9,7 +9,30 @@ Sistema web interactivo de pedidos para el restaurante **La Mamina**.
 - **Base de datos:** MySQL 8
 - **Orquestación:** Docker Compose
 
-## Historias implementadas (Sprint 1)
+## Perfiles y URLs
+
+Cada perfil tiene su propia URL (el topbar solo muestra la marca; no hay menú cruzado de perfiles).
+
+| Perfil | URL base | Acceso | Credenciales demo |
+|--------|----------|--------|-------------------|
+| **Cliente / Recepción** | http://localhost:5173/ | Selección de mesa + QR | — |
+| **Cliente / Menú** | http://localhost:5173/menu | Vía QR (`/s/:token`) | — |
+| **Cocina** | http://localhost:5173/cocina | Pedidos en tiempo real | — |
+| **Administrador** | http://localhost:5173/admin | Menú, mesas, pedidos (todo) | `admin` / `admin123` |
+| **Mesero** | http://localhost:5173/mesero | Solo gestión de pedidos | `mesero` / `mesero123` |
+
+Rutas útiles del administrador (tras login):
+
+- Panel: `/admin/panel`
+- Pedidos: `/admin/pedidos`
+- Menú: `/admin/menu`
+- Mesas: `/admin/mesas`
+
+Ruta del mesero (tras login): `/mesero/pedidos`
+
+> Si ya hay sesión de administrador y abres `/admin`, se redirige automáticamente a `/admin/panel`.
+
+## Historias implementadas
 
 | Jira | Historia | Estado | Ruta / endpoint |
 |------|----------|--------|-----------------|
@@ -20,8 +43,11 @@ Sistema web interactivo de pedidos para el restaurante **La Mamina**.
 | MMN-13 | Pedidos cocina en tiempo real (SSE) | Done | `/cocina` · `GET /api/kitchen` · `/api/kitchen/stream` |
 | MMN-12 | Detalle del pedido + notas | Done | `/cocina` · `GET /api/kitchen/:id` |
 | MMN-16 | Login administrador + JWT | Done | `/admin` · `POST /api/auth/login` · `GET /api/auth/me` |
+| MMN-18 | Gestionar menú (CRUD platos) | Done | `/admin/menu` · `/api/admin/products` |
+| MMN-19 | Gestionar mesas (CRUD) | Done | `/admin/mesas` · `/api/admin/tables` |
+| — | Gestionar pedidos + roles admin/mesero | Done | `/admin/pedidos` · `/mesero/pedidos` · `/api/admin/orders` |
 
-> Persistencia en **MySQL**. El botón **Enviar a cocina** demuestra MMN-13/MMN-12. La HU formal de “confirmar pedido” (MMN-4) pertenece al Sprint 2.
+> Persistencia en **MySQL**. Menú cliente solo platos **activos**. Recepción solo mesas **activas**. Cancelar un pedido lo saca de cocina y no se cobra.
 
 ## Requisitos
 
@@ -37,8 +63,6 @@ Sistema web interactivo de pedidos para el restaurante **La Mamina**.
 ## Setup recomendado — Docker
 
 ### 1. Variables de entorno (secretos)
-
-Cada frente tiene su propio `.env` (no se sube a git). Copia los ejemplos si aún no existen:
 
 ```bash
 cp database/.env.example database/.env
@@ -64,91 +88,37 @@ docker compose up --build -d
 |----------|----------------|
 | App (frontend) | http://localhost:5173 |
 | API (backend) | http://localhost:4000 |
-| MySQL | `localhost:3307` (usuario `root`, BD según `database/.env`) |
-
-Credenciales admin (seed automático al arrancar el backend):
-
-- Usuario: `admin`
-- Contraseña: `admin123`
+| MySQL | `localhost:3307` |
 
 ### Comandos útiles
 
 ```bash
-# Ver estado
 docker compose ps
-
-# Logs
 docker compose logs -f
-
-# Parar contenedores
 docker compose down
-
-# Parar y borrar datos de MySQL (volumen)
 docker compose down -v
-
-# Reconstruir tras cambios de código
 docker compose up --build -d
 ```
 
-### Qué hace cada Dockerfile
-
-| Carpeta | Imagen | Rol |
-|---------|--------|-----|
-| `database/` | MySQL 8 + `schema.sql` | Base de datos |
-| `backend/` | Node 20 | API + seed idempotente al iniciar |
-| `frontend/` | Build Vite + nginx | UI estática; proxy de `/api` → backend |
-
-Con `VITE_API_URL` vacío, el navegador llama a `/api` en el mismo origen y nginx reenvía al servicio `backend`.
-
-En Docker, Compose fuerza `DB_HOST=db` (nombre del servicio) aunque en `backend/.env` tengas `localhost` para desarrollo local.
-
 ## Setup alternativo — local (sin Docker)
 
-### 1. Base de datos
-
-Ajusta `backend/.env` (o cópialo desde `.env.example`):
-
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=tu_password
-```
-
-Luego:
-
 ```bash
-cd backend
-npm install
-npm run seed
+# BD
+cd backend && npm install && npm run seed
+
+# API
+npm run dev   # http://localhost:4000
+
+# Frontend
+cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
-
-### 2. API
-
-```bash
-cd backend
-npm run dev
-```
-
-API en `http://localhost:4000`
-
-### 3. Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App en `http://localhost:5173`
 
 ## Flujo de demo
 
-1. Abrir **Recepción** (`/`) → elegir mesa libre o **Pedir para llevar**.
-2. Escanear el QR (o usar el enlace “Abrir menú en este dispositivo”).
-3. En el menú, agregar platos al carrito (los agotados están bloqueados).
-4. Enviar a cocina.
-5. Abrir **Cocina** (`/cocina`) → ver tarjeta “Nuevo” y el detalle con notas.
-6. Probar **Admin** (`/admin`) con `admin` / `admin123`.
+1. **Cliente:** http://localhost:5173/ → mesa o para llevar → QR → menú → enviar a cocina.
+2. **Cocina:** http://localhost:5173/cocina → ver pedido nuevo y detalle.
+3. **Admin:** http://localhost:5173/admin → `admin` / `admin123` → pedidos / menú / mesas.
+4. **Mesero:** http://localhost:5173/mesero → `mesero` / `mesero123` → cancelar pedido si hace falta.
 
 Tip recepción: clic derecho sobre una mesa ocupada la libera (solo para demos).
 
@@ -156,9 +126,9 @@ Tip recepción: clic derecho sobre una mesa ocupada la libera (solo para demos).
 
 ```
 MaminaApp/
-├── docker-compose.yml   # orquesta db + backend + frontend
-├── backend/             # Express API (+ Dockerfile, .env)
-├── frontend/            # React Vite (+ Dockerfile / nginx, .env)
-├── database/            # MySQL (+ Dockerfile, .env, schema.sql)
-└── docs/                # documentación del sprint
+├── docker-compose.yml
+├── backend/
+├── frontend/
+├── database/
+└── docs/
 ```

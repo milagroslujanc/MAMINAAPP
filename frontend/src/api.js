@@ -37,8 +37,16 @@ export const api = {
   getMenu: () => request('/api/menu'),
   createOrder: (payload) =>
     request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }),
+  getActiveOrder: (sessionToken) =>
+    request(`/api/orders/active?sessionToken=${encodeURIComponent(sessionToken)}`),
   getKitchenOrders: () => request('/api/kitchen'),
   getKitchenOrder: (id) => request(`/api/kitchen/${id}`),
+  // se añadio el status
+  updateKitchenOrderStatus: (id, status) =>
+    request(`/api/kitchen/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
   kitchenStreamUrl: () => `${API_BASE}/api/kitchen/stream`,
   login: (username, password) =>
     request('/api/auth/login', {
@@ -46,4 +54,48 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
   me: () => request('/api/auth/me'),
+  getAdminCategories: () => request('/api/admin/categories'),
+  getAdminProducts: () => request('/api/admin/products'),
+  createAdminProduct: (payload) =>
+    request('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAdminProduct: (id, payload) =>
+    request(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  setAdminProductActive: (id, isActive) =>
+    request(`/api/admin/products/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    }),
+  deleteAdminProduct: (id) => request(`/api/admin/products/${id}`, { method: 'DELETE' }),
+  getAdminTables: () => request('/api/admin/tables'),
+  createAdminTable: (payload) =>
+    request('/api/admin/tables', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAdminTable: (id, payload) =>
+    request(`/api/admin/tables/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  setAdminTableActive: (id, isActive) =>
+    request(`/api/admin/tables/${id}/active`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    }),
+  deleteAdminTable: (id) => request(`/api/admin/tables/${id}`, { method: 'DELETE' }),
+  getAdminOrders: () => request('/api/admin/orders'),
+  getAdminOrder: (id) => request(`/api/admin/orders/${id}`),
+  cancelAdminOrder: (id) =>
+    request(`/api/admin/orders/${id}/cancel`, { method: 'POST' }),
+  updateOrderNotes: (id, notes) =>
+    request(`/api/admin/orders/${id}/notes`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    }),
+  addOrderItem: (id, payload) =>
+    request(`/api/admin/orders/${id}/items`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateOrderItem: (orderId, itemId, payload) =>
+    request(`/api/admin/orders/${orderId}/items/${itemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  removeOrderItem: (orderId, itemId) =>
+    request(`/api/admin/orders/${orderId}/items/${itemId}`, { method: 'DELETE' }),
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { clearStaffSession, homeForRole } from '../auth';
 
 export default function AdminHomePage() {
   const navigate = useNavigate();
@@ -11,20 +12,18 @@ export default function AdminHomePage() {
     let cancelled = false;
 
     async function verify() {
-      const raw = localStorage.getItem('mamina_admin');
-      if (!raw) {
-        navigate('/admin', { replace: true });
-        return;
-      }
-
       try {
         const data = await api.me();
+        if (data.admin?.role !== 'admin') {
+          navigate(homeForRole(data.admin?.role), { replace: true });
+          return;
+        }
         if (!cancelled) {
           setAdmin(data.admin);
           setChecking(false);
         }
       } catch {
-        localStorage.removeItem('mamina_admin');
+        clearStaffSession();
         if (!cancelled) navigate('/admin', { replace: true });
       }
     }
@@ -36,7 +35,7 @@ export default function AdminHomePage() {
   }, [navigate]);
 
   function logout() {
-    localStorage.removeItem('mamina_admin');
+    clearStaffSession();
     navigate('/admin');
   }
 
@@ -50,20 +49,22 @@ export default function AdminHomePage() {
 
   return (
     <section className="center-card">
-      <p className="eyebrow">Bienvenido</p>
+      <p className="eyebrow">Administrador</p>
       <h1>{admin.fullName || admin.username}</h1>
       <p className="muted">
-        Autenticación completada (MMN-16). El dashboard y la gestión de menú/mesas llegan en
-        sprints siguientes.
+        Acceso total: menú, mesas y pedidos de clientes.
       </p>
       <div className="admin-actions">
-        <Link className="btn" to="/">
-          Ver recepción
+        <Link className="btn primary" to="/admin/pedidos">
+          Gestionar pedidos
         </Link>
-        <Link className="btn" to="/cocina">
-          Ver cocina
+        <Link className="btn primary" to="/admin/menu">
+          Gestionar menú
         </Link>
-        <button type="button" className="btn primary" onClick={logout}>
+        <Link className="btn primary" to="/admin/mesas">
+          Gestionar mesas
+        </Link>
+        <button type="button" className="btn" onClick={logout}>
           Cerrar sesión
         </button>
       </div>

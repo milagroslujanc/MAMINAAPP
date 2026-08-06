@@ -49,6 +49,24 @@ export default function KitchenPage() {
             window.setTimeout(() => setFlash(''), 4000);
           }
         }
+        if (payload.type === 'order_cancelled' && payload.orderId) {
+          setOrders((prev) => prev.filter((o) => o.id !== payload.orderId));
+          knownIds.current.delete(payload.orderId);
+          setSelected((cur) => (cur?.id === payload.orderId ? null : cur));
+          setFlash(`Pedido #${payload.orderId} cancelado`);
+          window.setTimeout(() => setFlash(''), 4000);
+        }
+        if (payload.type === 'order_updated' && payload.orderId) {
+          load();
+          setFlash(`Pedido #${payload.orderId} actualizado`);
+          window.setTimeout(() => setFlash(''), 4000);
+          setSelected((cur) => {
+            if (cur?.id === payload.orderId) {
+              api.getKitchenOrder(payload.orderId).then(setSelected).catch(() => {});
+            }
+            return cur;
+          });
+        }
       } catch {
         /* ignore malformed SSE */
       }
@@ -65,6 +83,33 @@ export default function KitchenPage() {
     try {
       const detail = await api.getKitchenOrder(orderId);
       setSelected(detail);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+// añadido recien
+  async function markPreparing() {
+    if (!selected || selected.status !== 'pendiente') return;
+    try {
+      const detail = await api.updateKitchenOrderStatus(selected.id, 'en_preparacion');
+      setSelected(detail);
+      setFlash(`Pedido #${selected.id} en preparación`);
+      window.setTimeout(() => setFlash(''), 4000);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function markReady() {
+    if (!selected || selected.status !== 'en_preparacion') return;
+    try {
+      const detail = await api.updateKitchenOrderStatus(selected.id, 'listo');
+      setSelected(detail);
+      setFlash(`Pedido #${selected.id} listo`);
+      window.setTimeout(() => setFlash(''), 4000);
       await load();
     } catch (err) {
       setError(err.message);
@@ -145,6 +190,24 @@ export default function KitchenPage() {
                 ))}
               </ul>
               {selected.notes && <p>Observación general: {selected.notes}</p>}
+              {selected.status === 'pendiente' && (
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={markPreparing}
+                >
+                  Marcar como en preparación
+                </button>
+              )}
+              {selected.status === 'en_preparacion' && (
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={markReady}
+                >
+                  Marcar como listo
+                </button>
+              )}
               <p className="total-row">
                 <span>Total</span>
                 <strong>S/ {Number(selected.total).toFixed(2)}</strong>

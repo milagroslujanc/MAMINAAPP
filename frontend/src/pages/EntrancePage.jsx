@@ -28,6 +28,15 @@ export default function EntrancePage() {
     return () => clearInterval(id);
   }, [load]);
 
+  useEffect(() => {
+    if (!pendingTable) return undefined;
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setPendingTable(null);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [pendingTable]);
+
   async function confirmSelect() {
     if (!pendingTable) return;
     const table = pendingTable;
