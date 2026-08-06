@@ -21,9 +21,12 @@ FROM nginx:1.27-alpine
 LABEL project="La Mamina" \
       service="frontend"
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Plantilla: la imagen oficial de nginx sustituye ${PORT} al arrancar
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Docker Compose: 80 | Railway inyecta su propio PORT
+ENV PORT=80
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
