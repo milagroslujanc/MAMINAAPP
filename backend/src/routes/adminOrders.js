@@ -21,9 +21,10 @@ async function recalcTotal(conn, orderId) {
 async function getOrderDetail(orderId) {
   const [orders] = await pool.query(
     `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at,
-            t.number AS table_number
+            t.number AS table_number, s.status AS session_status
      FROM orders o
      LEFT JOIN \`tables\` t ON t.id = o.table_id
+     LEFT JOIN sessions s ON s.id = o.session_id
      WHERE o.id = ?`,
     [orderId]
   );
@@ -69,9 +70,10 @@ router.get(
   asyncHandler(async (_req, res) => {
     const [rows] = await pool.query(
       `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at, o.updated_at,
-              t.number AS table_number
+              t.number AS table_number, s.status AS session_status
        FROM orders o
        LEFT JOIN \`tables\` t ON t.id = o.table_id
+       LEFT JOIN sessions s ON s.id = o.session_id
        WHERE DATE(o.created_at) = CURDATE()
        ORDER BY o.created_at DESC`
     );
@@ -316,6 +318,66 @@ router.delete(
       bus.emit('order:updated', { id: orderId });
       const detail = await getOrderDetail(orderId);
       res.json({ ...detail, total, message: 'Ítem eliminado del pedido' });
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  })
+);
+
+router.post(
+  '/orders/:id/close-session',
+  asyncHandler(async (req, res) => {
+    const orderId = Number(req.params.id);
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      const [orders] = await conn.query(
+        `SELECT id, session_id, status FROM orders WHERE id = ? FOR UPDATE`,
+        [orderId]
+      );
+      const order = orders[0];
+      if (!order) {
+        await conn.rollback();
+        return res.status(404).json({ message: 'Pedido no encontrado' });
+      }
+
+      const [sessions] = await conn.query(
+        `SELECT id, table_id, status FROM sessions WHERE id = ? AND status = 'activa' FOR UPDATE`,
+        [order.session_id]
+      );
+      const session = sessions[0];
+      if (!session) {
+        await conn.rollback();
+        return res.json({ id: orderId, message: 'La sesión del cliente ya estaba cerrada' });
+      }
+
+      const nextOrderStatus = order.status === 'cancelado' ? 'cancelado' : 'entregado';
+      await conn.query(`UPDATE orders SET status = ?, is_new = 0 WHERE id = ?`, [
+        nextOrderStatus,
+        orderId,
+      ]);
+      await conn.query(`UPDATE sessions SET status = 'cerrada' WHERE id = ?`, [session.id]);
+
+      if (session.table_id) {
+        await conn.query(
+          `UPDATE tables SET status = 'libre', qr_token = NULL WHERE id = ?`,
+          [session.table_id]
+        );
+      }
+
+      await conn.commit();
+      res.json({
+        id: orderId,
+        message:
+          order.status === 'cancelado'
+            ? 'Pedido cancelado y sesión del cliente cerrada'
+            : 'Pedido finalizado y sesión del cliente cerrada',
+      });
     } catch (err) {
       await conn.rollback();
       throw err;
