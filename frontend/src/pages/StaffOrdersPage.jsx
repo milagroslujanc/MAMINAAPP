@@ -415,6 +415,16 @@ export default function StaffOrdersPage({ roleRequired }) {
                           <IconCancel />
                         </IconButton>
                       )}
+                      {(order.status === 'entregado' || order.status === 'cancelado') && (
+                        <button
+                          type="button"
+                          className="btn small"
+                          disabled={saving}
+                          onClick={() => askCloseSession(order)}
+                        >
+                          Cerrar sesión
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -439,6 +449,17 @@ export default function StaffOrdersPage({ roleRequired }) {
                   : `Mesa ${selected.table_number ?? '—'}`}{' '}
                 · <StatusLabel status={selected.status} /> · S/ {Number(selected.total).toFixed(2)}
               </p>
+
+              {(selected.status === 'entregado' || selected.status === 'cancelado') && (
+                <button
+                  type="button"
+                  className="btn small"
+                  disabled={saving}
+                  onClick={() => askCloseSession(selected)}
+                >
+                  Cerrar sesión
+                </button>
+              )}
 
               <label>
                 Notas generales del pedido

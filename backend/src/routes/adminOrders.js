@@ -326,6 +326,58 @@ router.delete(
 );
 
 router.post(
+  '/orders/:id/close-session',
+  asyncHandler(async (req, res) => {
+    const orderId = Number(req.params.id);
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      const [orders] = await conn.query(
+        `SELECT id, session_id, status FROM orders WHERE id = ? FOR UPDATE`,
+        [orderId]
+      );
+      const order = orders[0];
+      if (!order) {
+        await conn.rollback();
+        return res.status(404).json({ message: 'Pedido no encontrado' });
+      }
+
+      const [sessions] = await conn.query(
+        `SELECT id, table_id, status FROM sessions WHERE id = ? AND status = 'activa' FOR UPDATE`,
+        [order.session_id]
+      );
+      const session = sessions[0];
+      if (!session) {
+        await conn.rollback();
+        return res.json({ id: orderId, message: 'La sesión del cliente ya estaba cerrada' });
+      }
+
+      await conn.query(`UPDATE sessions SET status = 'cerrada' WHERE id = ?`, [session.id]);
+
+      if (session.table_id) {
+        await conn.query(
+          `UPDATE tables SET status = 'libre', qr_token = NULL WHERE id = ?`,
+          [session.table_id]
+        );
+      }
+
+      await conn.commit();
+      res.json({
+        id: orderId,
+        message: session.table_id ? 'Sesión del cliente cerrada y mesa liberada' : 'Sesión del cliente cerrada',
+      });
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  })
+);
+
+router.post(
   '/orders/:id/cancel',
   asyncHandler(async (req, res) => {
     const orderId = Number(req.params.id);
