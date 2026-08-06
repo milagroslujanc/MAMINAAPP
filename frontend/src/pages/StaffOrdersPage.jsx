@@ -17,6 +17,7 @@ const STATUS_LABELS = {
   listo: 'Listo',
   entregado: 'Entregado',
   cancelado: 'Cancelado',
+  finalizado: 'Finalizado',
 };
 
 function StatusLabel({ status }) {
@@ -84,6 +85,8 @@ export default function StaffOrdersPage({ roleRequired }) {
   const [success, setSuccess] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [finishedOrderIds, setFinishedOrderIds] = useState([]);
+  const [view, setView] = useState('active');
 
   const load = useCallback(async () => {
     const list = await api.getAdminOrders();
@@ -192,7 +195,7 @@ export default function StaffOrdersPage({ roleRequired }) {
   }
 
   function editable(order) {
-    return order && order.status !== 'cancelado' && order.status !== 'entregado';
+    return order && order.status !== 'cancelado' && order.status !== 'entregado' && order.status !== 'finalizado';
   }
 
   async function saveNotes() {
@@ -287,6 +290,25 @@ export default function StaffOrdersPage({ roleRequired }) {
     });
   }
 
+  function askCloseSession(order) {
+    setConfirm({
+      type: 'close-session',
+      order,
+      title: 'Cerrar sesión del cliente',
+      message: `¿Cerrar la sesión del cliente del pedido #${order.id}? Esto finaliza el acceso por QR al menú y libera la mesa si aplica.`,
+      confirmLabel: 'Cerrar sesión',
+    });
+  }
+
+  function toggleFinished(orderId) {
+    const order = orders.find((item) => item.id === orderId);
+    if (!order || order.status === 'cancelado') return;
+
+    setFinishedOrderIds((prev) =>
+      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
+    );
+  }
+
   async function runConfirm() {
     if (!confirm) return;
     const action = confirm;
@@ -298,6 +320,12 @@ export default function StaffOrdersPage({ roleRequired }) {
       if (action.type === 'cancel-order') {
         const result = await api.cancelAdminOrder(action.order.id);
         setSuccess(result.message);
+        if (selected?.id === action.order.id) setSelected(null);
+      }
+      if (action.type === 'close-session') {
+        const result = await api.closeAdminOrderSession(action.order.id);
+        setSuccess(result.message || 'Pedido finalizado');
+        setFinishedOrderIds((prev) => prev.filter((id) => id !== action.order.id));
         if (selected?.id === action.order.id) setSelected(null);
       }
       if (action.type === 'remove-item') {
@@ -325,6 +353,9 @@ export default function StaffOrdersPage({ roleRequired }) {
     );
   }
 
+  const activeOrders = orders.filter((order) => order.session_status === 'activa');
+  const historyOrders = orders.filter((order) => order.session_status !== 'activa');
+  const visibleOrders = view === 'active' ? activeOrders : historyOrders;
   const panelLink = staff?.role === 'admin' ? '/admin/panel' : null;
   const canEdit = editable(selected);
 
@@ -355,6 +386,23 @@ export default function StaffOrdersPage({ roleRequired }) {
         </div>
       </div>
 
+      <div className="menu-tabs">
+        <button
+          type="button"
+          className={`tab-button ${view === 'active' ? 'active' : ''}`}
+          onClick={() => setView('active')}
+        >
+          Activos ({activeOrders.length})
+        </button>
+        <button
+          type="button"
+          className={`tab-button ${view === 'history' ? 'active' : ''}`}
+          onClick={() => setView('history')}
+        >
+          Historial ({historyOrders.length})
+        </button>
+      </div>
+
       {error && <div className="alert">{error}</div>}
       {success && <div className="alert ok">{success}</div>}
 
@@ -373,14 +421,16 @@ export default function StaffOrdersPage({ roleRequired }) {
               </tr>
             </thead>
             <tbody>
-              {!orders.length && (
+              {!visibleOrders.length && (
                 <tr>
                   <td colSpan={7} className="muted">
-                    No hay pedidos registrados hoy.
+                    {view === 'active'
+                      ? 'No hay pedidos activos que requieran atención.'
+                      : 'No hay pedidos en el historial aún.'}
                   </td>
                 </tr>
               )}
-              {orders.map((order) => (
+              {visibleOrders.map((order) => (
                 <tr
                   key={order.id}
                   className={`${order.status === 'cancelado' ? 'row-cancelled' : ''} ${
@@ -403,27 +453,45 @@ export default function StaffOrdersPage({ roleRequired }) {
                   <td>{order.charged ? 'Sí' : 'No'}</td>
                   <td>
                     <div className="orders-actions">
-                      <IconButton label="Editar pedido" onClick={() => openOrder(order.id)}>
-                        <IconEdit />
-                      </IconButton>
-                      {order.status !== 'cancelado' && order.status !== 'entregado' && (
-                        <IconButton
-                          label="Cancelar pedido"
-                          className="danger"
-                          onClick={() => askCancel(order)}
-                        >
-                          <IconCancel />
-                        </IconButton>
+                      {view === 'active' && (
+                        <>
+                          <label className="finished-toggle">
+                            <input
+                              type="checkbox"
+                              checked={finishedOrderIds.includes(order.id)}
+                              disabled={order.status === 'cancelado'}
+                              onChange={() => toggleFinished(order.id)}
+                            />
+                            <span>Pedido terminado</span>
+                          </label>
+                          <IconButton label="Editar pedido" onClick={() => openOrder(order.id)}>
+                            <IconEdit />
+                          </IconButton>
+                          {order.status !== 'cancelado' && order.status !== 'entregado' && (
+                            <IconButton
+                              label="Cancelar pedido"
+                              className="danger"
+                              onClick={() => askCancel(order)}
+                            >
+                              <IconCancel />
+                            </IconButton>
+                          )}
+                          {(finishedOrderIds.includes(order.id) || order.status === 'cancelado') && (
+                            <button
+                              type="button"
+                              className="btn small"
+                              disabled={saving}
+                              onClick={() => askCloseSession(order)}
+                            >
+                              Cerrar sesión
+                            </button>
+                          )}
+                        </>
                       )}
-                      {(order.status === 'entregado' || order.status === 'cancelado') && (
-                        <button
-                          type="button"
-                          className="btn small"
-                          disabled={saving}
-                          onClick={() => askCloseSession(order)}
-                        >
-                          Cerrar sesión
-                        </button>
+                      {view === 'history' && (
+                        <IconButton label="Ver pedido" onClick={() => openOrder(order.id)}>
+                          <IconEdit />
+                        </IconButton>
                       )}
                     </div>
                   </td>
@@ -450,16 +518,17 @@ export default function StaffOrdersPage({ roleRequired }) {
                 · <StatusLabel status={selected.status} /> · S/ {Number(selected.total).toFixed(2)}
               </p>
 
-              {(selected.status === 'entregado' || selected.status === 'cancelado') && (
-                <button
-                  type="button"
-                  className="btn small"
-                  disabled={saving}
-                  onClick={() => askCloseSession(selected)}
-                >
-                  Cerrar sesión
-                </button>
-              )}
+              {selected?.session_status === 'activa' &&
+                (finishedOrderIds.includes(selected.id) || selected.status === 'cancelado') && (
+                  <button
+                    type="button"
+                    className="btn small"
+                    disabled={saving}
+                    onClick={() => askCloseSession(selected)}
+                  >
+                    Cerrar sesión
+                  </button>
+                )}
 
               <label>
                 Notas generales del pedido

@@ -21,9 +21,10 @@ async function recalcTotal(conn, orderId) {
 async function getOrderDetail(orderId) {
   const [orders] = await pool.query(
     `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at,
-            t.number AS table_number
+            t.number AS table_number, s.status AS session_status
      FROM orders o
      LEFT JOIN \`tables\` t ON t.id = o.table_id
+     LEFT JOIN sessions s ON s.id = o.session_id
      WHERE o.id = ?`,
     [orderId]
   );
@@ -69,9 +70,10 @@ router.get(
   asyncHandler(async (_req, res) => {
     const [rows] = await pool.query(
       `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at, o.updated_at,
-              t.number AS table_number
+              t.number AS table_number, s.status AS session_status
        FROM orders o
        LEFT JOIN \`tables\` t ON t.id = o.table_id
+       LEFT JOIN sessions s ON s.id = o.session_id
        WHERE DATE(o.created_at) = CURDATE()
        ORDER BY o.created_at DESC`
     );
@@ -354,6 +356,11 @@ router.post(
         return res.json({ id: orderId, message: 'La sesión del cliente ya estaba cerrada' });
       }
 
+      const nextOrderStatus = order.status === 'cancelado' ? 'cancelado' : 'entregado';
+      await conn.query(`UPDATE orders SET status = ?, is_new = 0 WHERE id = ?`, [
+        nextOrderStatus,
+        orderId,
+      ]);
       await conn.query(`UPDATE sessions SET status = 'cerrada' WHERE id = ?`, [session.id]);
 
       if (session.table_id) {
@@ -366,7 +373,10 @@ router.post(
       await conn.commit();
       res.json({
         id: orderId,
-        message: session.table_id ? 'Sesión del cliente cerrada y mesa liberada' : 'Sesión del cliente cerrada',
+        message:
+          order.status === 'cancelado'
+            ? 'Pedido cancelado y sesión del cliente cerrada'
+            : 'Pedido finalizado y sesión del cliente cerrada',
       });
     } catch (err) {
       await conn.rollback();
