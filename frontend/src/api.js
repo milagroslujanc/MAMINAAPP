@@ -92,6 +92,7 @@ export const api = {
   getAdminOrder: (id) => request(`/api/admin/orders/${id}`),
   cancelAdminOrder: (id) =>
     request(`/api/admin/orders/${id}/cancel`, { method: 'POST' }),
+  getAdminStats: () => request('/api/admin/stats'),
   closeAdminOrderSession: (id) =>
     request(`/api/admin/orders/${id}/close-session`, { method: 'POST' }),
   updateOrderNotes: (id, notes) =>

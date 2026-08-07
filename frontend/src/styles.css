@@ -795,6 +795,71 @@ h1 {
   align-items: start;
 }
 
+.admin-stats-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-stats-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 900px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.stat-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 1.35rem;
+  box-shadow: 0 2px 20px rgba(34, 34, 34, 0.05);
+}
+
+.section-header {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.stat-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--gris);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1.1rem 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.stat-label {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--carbon);
+}
+
+.stat-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .admin-product-form,
 .admin-product-list {
   background: var(--surface);

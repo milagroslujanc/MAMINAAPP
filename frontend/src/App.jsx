@@ -5,6 +5,7 @@ import MenuPage from './pages/MenuPage.jsx';
 import KitchenPage from './pages/KitchenPage.jsx';
 import StaffLoginPage from './pages/StaffLoginPage.jsx';
 import AdminHomePage from './pages/AdminHomePage.jsx';
+import AdminStatsPage from './pages/AdminStatsPage.jsx';
 import AdminMenuPage from './pages/AdminMenuPage.jsx';
 import AdminTablesPage from './pages/AdminTablesPage.jsx';
 import StaffOrdersPage from './pages/StaffOrdersPage.jsx';
@@ -32,6 +33,7 @@ export default function App() {
           {/* Administrador */}
           <Route path="/admin" element={<StaffLoginPage expectedRole="admin" />} />
           <Route path="/admin/panel" element={<AdminHomePage />} />
+          <Route path="/admin/estadisticas" element={<AdminStatsPage />} />
           <Route path="/admin/menu" element={<AdminMenuPage />} />
           <Route path="/admin/mesas" element={<AdminTablesPage />} />
           <Route path="/admin/pedidos" element={<StaffOrdersPage roleRequired="admin" />} />
