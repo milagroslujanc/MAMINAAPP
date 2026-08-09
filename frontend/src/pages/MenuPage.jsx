@@ -35,7 +35,8 @@ function formatTime(iso) {
 }
 
 export default function MenuPage() {
-  const [session] = useState(loadSession);
+  const [session, setSession] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState(loadCart);
   const [activeOrder, setActiveOrder] = useState(null);
@@ -46,18 +47,54 @@ export default function MenuPage() {
   const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function ensureSession() {
+      const stored = loadSession();
+      if (!stored?.sessionToken) {
+        if (!cancelled) {
+          setSession(null);
+          setSessionChecked(true);
+        }
+        return;
+      }
+
+      try {
+        await api.resolveSession(stored.sessionToken);
+        if (!cancelled) {
+          setSession(stored);
+          setSessionChecked(true);
+        }
+      } catch {
+        sessionStorage.removeItem('mamina_session');
+        sessionStorage.removeItem(CART_KEY);
+        if (!cancelled) {
+          setSession(null);
+          setSessionChecked(true);
+        }
+      }
+    }
+
+    ensureSession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!sessionChecked) return;
     api
       .getMenu()
       .then((data) => setMenu(Array.isArray(data) ? data : []))
       .catch((err) => setError(err.message));
-    loadActiveOrder();
-  }, []);
+    if (session?.sessionToken) loadActiveOrder();
+  }, [sessionChecked, session?.sessionToken]);
 
   useEffect(() => {
-    if (selectedTab === 'status') {
+    if (selectedTab === 'status' && session?.sessionToken) {
       loadActiveOrder();
     }
-  }, [selectedTab]);
+  }, [selectedTab, session?.sessionToken]);
 
   useEffect(() => {
     sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -70,6 +107,14 @@ export default function MenuPage() {
 
   const count = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
 
+  function clearClientSession() {
+    sessionStorage.removeItem('mamina_session');
+    sessionStorage.removeItem(CART_KEY);
+    setSession(null);
+    setCart([]);
+    setActiveOrder(null);
+  }
+
   async function loadActiveOrder() {
     if (!session?.sessionToken) return;
     try {
@@ -77,6 +122,10 @@ export default function MenuPage() {
       setActiveOrder(order);
       setError('');
     } catch (err) {
+      if (err.message === 'Sesión inválida' || err.message === 'Código QR inválido o expirado') {
+        clearClientSession();
+        return;
+      }
       if (err.message === 'Pedido no encontrado') {
         setActiveOrder(null);
       } else {
@@ -126,7 +175,7 @@ export default function MenuPage() {
 
   async function sendOrder() {
     if (!session?.sessionToken) {
-      setError('No hay sesión activa. Escanea el QR desde recepción.');
+      setError('No hay sesión activa. Escanea el QR para poder iniciar un pedido.');
       return;
     }
     if (!cart.length) return;
@@ -157,17 +206,34 @@ export default function MenuPage() {
       const fresh = await api.getMenu();
       setMenu(fresh);
     } catch (err) {
-      setError(err.message);
+      if (
+        /sesión/i.test(err.message) ||
+        /QR/i.test(err.message) ||
+        /expirad/i.test(err.message)
+      ) {
+        clearClientSession();
+        setError('Escanea el QR para poder iniciar un pedido.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSending(false);
     }
+  }
+
+  if (!sessionChecked) {
+    return (
+      <section className="center-card">
+        <p className="muted">Verificando sesión…</p>
+      </section>
+    );
   }
 
   if (!session) {
     return (
       <section className="center-card">
         <h1>Sin sesión de mesa</h1>
-        <p>Escanea el QR de la pantalla de entrada para vincular tu mesa.</p>
+        <p>Escanea el QR para poder iniciar un pedido.</p>
         <Link className="btn" to="/">
           Ir a recepción
         </Link>
