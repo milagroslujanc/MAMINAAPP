@@ -412,6 +412,13 @@ router.post(
       }
 
       await conn.commit();
+
+      if (nextOrderStatus === 'entregado') {
+        bus.emit('order:updated', { id: orderId });
+      } else {
+        bus.emit('order:cancelled', { id: orderId });
+      }
+
       res.json({
         id: orderId,
         message:
