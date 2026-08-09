@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const bus = require('../events');
-const { requireStaff } = require('../middleware/auth');
+const { requireStaff, requireAdmin } = require('../middleware/auth');
 const { asyncHandler } = require('../utils');
 
 const router = express.Router();
@@ -48,6 +48,47 @@ async function getOrderDetail(orderId) {
     })),
   };
 }
+
+router.get(
+  '/stats',
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    const [rows] = await pool.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() AND status = 'entregado' THEN total END), 0) AS dailyRevenue,
+         COALESCE(COUNT(CASE WHEN DATE(created_at) = CURDATE() AND status = 'entregado' THEN 1 END), 0) AS dailyCompleted,
+         COALESCE(COUNT(DISTINCT CASE WHEN DATE(created_at) = CURDATE() THEN session_id END), 0) AS dailyClients,
+
+         COALESCE(SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) AND status = 'entregado' THEN total END), 0) AS monthlyRevenue,
+         COALESCE(COUNT(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) AND status = 'entregado' THEN 1 END), 0) AS monthlyCompleted,
+         COALESCE(COUNT(DISTINCT CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) THEN session_id END), 0) AS monthlyClients,
+
+         COALESCE(SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND status = 'entregado' THEN total END), 0) AS yearlyRevenue,
+         COALESCE(COUNT(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND status = 'entregado' THEN 1 END), 0) AS yearlyCompleted,
+         COALESCE(COUNT(DISTINCT CASE WHEN YEAR(created_at) = YEAR(CURDATE()) THEN session_id END), 0) AS yearlyClients
+       FROM orders`
+    );
+
+    const row = rows[0] || {};
+    res.json({
+      daily: {
+        revenue: Number(row.dailyRevenue),
+        completedOrders: Number(row.dailyCompleted),
+        clients: Number(row.dailyClients),
+      },
+      monthly: {
+        revenue: Number(row.monthlyRevenue),
+        completedOrders: Number(row.monthlyCompleted),
+        clients: Number(row.monthlyClients),
+      },
+      yearly: {
+        revenue: Number(row.yearlyRevenue),
+        completedOrders: Number(row.yearlyCompleted),
+        clients: Number(row.yearlyClients),
+      },
+    });
+  })
+);
 
 function assertEditable(order, res) {
   if (!order) {
