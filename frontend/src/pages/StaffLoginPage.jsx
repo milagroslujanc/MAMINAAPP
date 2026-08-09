@@ -122,9 +122,7 @@ export default function StaffLoginPage({ expectedRole }) {
           {loading ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
-      <p className="hint">
-        {isMesero ? 'Demo → mesero / mesero123' : 'Demo → admin / admin123'}
-      </p>
+      
     </section>
   );
 }

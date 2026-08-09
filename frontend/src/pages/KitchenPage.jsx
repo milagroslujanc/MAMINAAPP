@@ -122,10 +122,10 @@ export default function KitchenPage() {
       <div className="kitchen-header">
         <div>
           <p className="eyebrow">Gestión de cocina</p>
-          <h1>Pedidos en tiempo real</h1>
+          <h1>Lista de pedidos</h1>
           <p className="muted">
             {live
-              ? 'Conexión en vivo (SSE) · los pedidos aparecen al instante'
+              ? 'Pedidos para cocina'
               : 'Reconectando… (respaldo cada 15 s)'}
           </p>
         </div>
