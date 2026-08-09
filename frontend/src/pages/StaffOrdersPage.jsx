@@ -85,7 +85,6 @@ export default function StaffOrdersPage({ roleRequired }) {
   const [success, setSuccess] = useState('');
   const [confirm, setConfirm] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [finishedOrderIds, setFinishedOrderIds] = useState([]);
   const [view, setView] = useState('active');
 
   const load = useCallback(async () => {
@@ -290,23 +289,14 @@ export default function StaffOrdersPage({ roleRequired }) {
     });
   }
 
-  function askCloseSession(order) {
+  function askFinishOrder(order) {
     setConfirm({
-      type: 'close-session',
+      type: 'finish-order',
       order,
-      title: 'Cerrar sesión del cliente',
-      message: `¿Cerrar la sesión del cliente del pedido #${order.id}? Esto finaliza el acceso por QR al menú y libera la mesa si aplica.`,
-      confirmLabel: 'Cerrar sesión',
+      title: 'Terminar pedido',
+      message: `¿Terminar el pedido #${order.id}? Se marcará como entregado, se liberará la mesa (si aplica), se cerrará la sesión del cliente y pasará al historial.`,
+      confirmLabel: 'Terminar pedido',
     });
-  }
-
-  function toggleFinished(orderId) {
-    const order = orders.find((item) => item.id === orderId);
-    if (!order || order.status === 'cancelado') return;
-
-    setFinishedOrderIds((prev) =>
-      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
-    );
   }
 
   async function runConfirm() {
@@ -322,10 +312,9 @@ export default function StaffOrdersPage({ roleRequired }) {
         setSuccess(result.message);
         if (selected?.id === action.order.id) setSelected(null);
       }
-      if (action.type === 'close-session') {
+      if (action.type === 'finish-order') {
         const result = await api.closeAdminOrderSession(action.order.id);
-        setSuccess(result.message || 'Pedido finalizado');
-        setFinishedOrderIds((prev) => prev.filter((id) => id !== action.order.id));
+        setSuccess(result.message || 'Pedido terminado');
         if (selected?.id === action.order.id) setSelected(null);
       }
       if (action.type === 'remove-item') {
@@ -353,8 +342,12 @@ export default function StaffOrdersPage({ roleRequired }) {
     );
   }
 
-  const activeOrders = orders.filter((order) => order.status !== 'entregado');
-  const historyOrders = orders.filter((order) => order.status === 'entregado');
+  const activeOrders = orders.filter(
+    (order) => order.status !== 'entregado' && order.status !== 'cancelado'
+  );
+  const historyOrders = orders.filter(
+    (order) => order.status === 'entregado' || order.status === 'cancelado'
+  );
   const visibleOrders = view === 'active' ? activeOrders : historyOrders;
   const panelLink = staff?.role === 'admin' ? '/admin/panel' : null;
   const canEdit = editable(selected);
@@ -455,37 +448,24 @@ export default function StaffOrdersPage({ roleRequired }) {
                     <div className="orders-actions">
                       {view === 'active' && (
                         <>
-                          <label className="finished-toggle">
-                            <input
-                              type="checkbox"
-                              checked={finishedOrderIds.includes(order.id)}
-                              disabled={order.status === 'cancelado'}
-                              onChange={() => toggleFinished(order.id)}
-                            />
-                            <span>Pedido terminado</span>
-                          </label>
                           <IconButton label="Editar pedido" onClick={() => openOrder(order.id)}>
                             <IconEdit />
                           </IconButton>
-                          {order.status !== 'cancelado' && order.status !== 'entregado' && (
-                            <IconButton
-                              label="Cancelar pedido"
-                              className="danger"
-                              onClick={() => askCancel(order)}
-                            >
-                              <IconCancel />
-                            </IconButton>
-                          )}
-                          {(finishedOrderIds.includes(order.id) || order.status === 'cancelado') && (
-                            <button
-                              type="button"
-                              className="btn small"
-                              disabled={saving}
-                              onClick={() => askCloseSession(order)}
-                            >
-                              Cerrar sesión
-                            </button>
-                          )}
+                          <IconButton
+                            label="Cancelar pedido"
+                            className="danger"
+                            onClick={() => askCancel(order)}
+                          >
+                            <IconCancel />
+                          </IconButton>
+                          <button
+                            type="button"
+                            className="btn small"
+                            disabled={saving}
+                            onClick={() => askFinishOrder(order)}
+                          >
+                            Terminar pedido
+                          </button>
                         </>
                       )}
                       {view === 'history' && (
@@ -518,17 +498,16 @@ export default function StaffOrdersPage({ roleRequired }) {
                 · <StatusLabel status={selected.status} /> · S/ {Number(selected.total).toFixed(2)}
               </p>
 
-              {selected?.session_status === 'activa' &&
-                (finishedOrderIds.includes(selected.id) || selected.status === 'cancelado') && (
-                  <button
-                    type="button"
-                    className="btn small"
-                    disabled={saving}
-                    onClick={() => askCloseSession(selected)}
-                  >
-                    Cerrar sesión
-                  </button>
-                )}
+              {canEdit && (
+                <button
+                  type="button"
+                  className="btn small"
+                  disabled={saving}
+                  onClick={() => askFinishOrder(selected)}
+                >
+                  Terminar pedido
+                </button>
+              )}
 
               <label>
                 Notas generales del pedido

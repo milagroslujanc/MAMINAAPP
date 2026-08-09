@@ -386,25 +386,30 @@ router.post(
         await conn.rollback();
         return res.status(404).json({ message: 'Pedido no encontrado' });
       }
+      if (order.status === 'entregado') {
+        await conn.rollback();
+        return res.json({ id: orderId, message: 'El pedido ya estaba terminado' });
+      }
+      if (order.status === 'cancelado') {
+        await conn.rollback();
+        return res.status(409).json({ message: 'No se puede terminar un pedido cancelado' });
+      }
 
       const [sessions] = await conn.query(
-        `SELECT id, table_id, status FROM sessions WHERE id = ? AND status = 'activa' FOR UPDATE`,
+        `SELECT id, table_id, status FROM sessions WHERE id = ? FOR UPDATE`,
         [order.session_id]
       );
       const session = sessions[0];
-      if (!session) {
-        await conn.rollback();
-        return res.json({ id: orderId, message: 'La sesión del cliente ya estaba cerrada' });
-      }
 
-      const nextOrderStatus = order.status === 'cancelado' ? 'cancelado' : 'entregado';
-      await conn.query(`UPDATE orders SET status = ?, is_new = 0 WHERE id = ?`, [
-        nextOrderStatus,
+      await conn.query(`UPDATE orders SET status = 'entregado', is_new = 0 WHERE id = ?`, [
         orderId,
       ]);
-      await conn.query(`UPDATE sessions SET status = 'cerrada' WHERE id = ?`, [session.id]);
 
-      if (session.table_id) {
+      if (session && session.status === 'activa') {
+        await conn.query(`UPDATE sessions SET status = 'cerrada' WHERE id = ?`, [session.id]);
+      }
+
+      if (session?.table_id) {
         await conn.query(
           `UPDATE tables SET status = 'libre', qr_token = NULL WHERE id = ?`,
           [session.table_id]
@@ -412,19 +417,11 @@ router.post(
       }
 
       await conn.commit();
-
-      if (nextOrderStatus === 'entregado') {
-        bus.emit('order:updated', { id: orderId });
-      } else {
-        bus.emit('order:cancelled', { id: orderId });
-      }
+      bus.emit('order:updated', { id: orderId });
 
       res.json({
         id: orderId,
-        message:
-          order.status === 'cancelado'
-            ? 'Pedido cancelado y sesión del cliente cerrada'
-            : 'Pedido finalizado y sesión del cliente cerrada',
+        message: 'Pedido terminado: mesa liberada, pedido entregado y sesión del cliente cerrada',
       });
     } catch (err) {
       await conn.rollback();
