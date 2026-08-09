@@ -63,7 +63,13 @@ export default function KitchenPage() {
           window.setTimeout(() => setFlash(''), 4000);
           setSelected((cur) => {
             if (cur?.id === payload.orderId) {
-              api.getKitchenOrder(payload.orderId).then(setSelected).catch(() => {});
+              api
+                .getKitchenOrder(payload.orderId)
+                .then((detail) => {
+                  if (detail.status === 'entregado') setSelected(null);
+                  else setSelected(detail);
+                })
+                .catch(() => setSelected(null));
             }
             return cur;
           });

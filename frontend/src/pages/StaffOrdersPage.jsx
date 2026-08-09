@@ -67,7 +67,7 @@ function IconTrash() {
 }
 
 /**
- * Historial de pedidos del día + edición + cancelación.
+ * Pedidos del día: activos + historial (solo entregados).
  * Acceso: administrador y mesero.
  */
 export default function StaffOrdersPage({ roleRequired }) {
@@ -353,8 +353,8 @@ export default function StaffOrdersPage({ roleRequired }) {
     );
   }
 
-  const activeOrders = orders.filter((order) => order.session_status === 'activa');
-  const historyOrders = orders.filter((order) => order.session_status !== 'activa');
+  const activeOrders = orders.filter((order) => order.status !== 'entregado');
+  const historyOrders = orders.filter((order) => order.status === 'entregado');
   const visibleOrders = view === 'active' ? activeOrders : historyOrders;
   const panelLink = staff?.role === 'admin' ? '/admin/panel' : null;
   const canEdit = editable(selected);
