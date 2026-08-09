@@ -55,6 +55,9 @@ export default function AdminHomePage() {
         Acceso total: menú, mesas y pedidos de clientes.
       </p>
       <div className="admin-actions">
+        <Link className="btn" to="/admin/estadisticas">
+          Ver estadísticas
+        </Link>
         <Link className="btn primary" to="/admin/pedidos">
           Gestionar pedidos
         </Link>
