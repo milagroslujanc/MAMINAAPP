@@ -44,7 +44,8 @@ router.get(
               t.number AS table_number
        FROM orders o
        LEFT JOIN \`tables\` t ON t.id = o.table_id
-       WHERE o.status IN ('pendiente', 'en_preparacion', 'listo')
+       WHERE DATE(o.created_at) = CURDATE()
+         AND o.status IN ('pendiente', 'en_preparacion', 'listo')
        ORDER BY o.created_at ASC`
     );
 
