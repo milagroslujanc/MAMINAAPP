@@ -10,6 +10,7 @@ import AdminMenuPage from './pages/AdminMenuPage.jsx';
 import AdminTablesPage from './pages/AdminTablesPage.jsx';
 import StaffOrdersPage from './pages/StaffOrdersPage.jsx';
 import StaffFloorPage from './pages/StaffFloorPage.jsx';
+import StaffOrderTakePage from './pages/StaffOrderTakePage.jsx';
 
 export default function App() {
   return (
@@ -38,11 +39,13 @@ export default function App() {
           <Route path="/admin/menu" element={<AdminMenuPage />} />
           <Route path="/admin/mesas" element={<AdminTablesPage />} />
           <Route path="/admin/salon" element={<StaffFloorPage roleRequired="admin" />} />
+          <Route path="/admin/tomar-pedido" element={<StaffOrderTakePage />} />
           <Route path="/admin/pedidos" element={<StaffOrdersPage roleRequired="admin" />} />
 
           {/* Mesero */}
           <Route path="/mesero" element={<StaffLoginPage expectedRole="mesero" />} />
           <Route path="/mesero/mesas" element={<StaffFloorPage roleRequired="mesero" />} />
+          <Route path="/mesero/tomar-pedido" element={<StaffOrderTakePage />} />
           <Route path="/mesero/pedidos" element={<StaffOrdersPage roleRequired="mesero" />} />
         </Routes>
       </main>

@@ -1305,37 +1305,15 @@ h1 {
   margin-top: 0.35rem;
 }
 
-.floor-order-panel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 1.15rem;
-  display: grid;
-  gap: 0.85rem;
-}
-
-.floor-product-list {
-  max-height: 240px;
-  overflow: auto;
-  display: grid;
-  gap: 0.35rem;
-}
-
-.floor-product-row {
+.staff-take-actions {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  width: 100%;
-  text-align: left;
-  border: 1px solid var(--line);
-  background: var(--gris);
-  border-radius: 12px;
-  padding: 0.65rem 0.8rem;
-  cursor: pointer;
+  align-items: center;
 }
 
-.floor-product-row:hover {
-  border-color: var(--rojo);
+.staff-take-order .menu-header {
+  align-items: flex-start;
 }
 
 .sales-histogram-section {
