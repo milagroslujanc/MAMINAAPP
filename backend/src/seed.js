@@ -66,6 +66,33 @@ async function seed() {
         `UPDATE admins SET role = 'admin' WHERE username = 'admin' AND (role IS NULL OR role = '')`
       );
 
+      // Migración: alertas de servicio (solicitar terminar pedido)
+      const [reqTable] = await connection.query(
+        `SELECT COUNT(*) AS c FROM information_schema.tables
+         WHERE table_schema = ? AND table_name = 'service_requests'`,
+        [dbName]
+      );
+      if (reqTable[0].c === 0) {
+        await connection.query(`
+          CREATE TABLE service_requests (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            order_id INT NOT NULL,
+            session_id INT NOT NULL,
+            table_id INT NULL,
+            type ENUM('terminar_pedido') NOT NULL DEFAULT 'terminar_pedido',
+            status ENUM('pendiente', 'atendida') NOT NULL DEFAULT 'pendiente',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            attended_at TIMESTAMP NULL,
+            attended_by INT NULL,
+            FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+            FOREIGN KEY (session_id) REFERENCES sessions(id),
+            FOREIGN KEY (table_id) REFERENCES \`tables\`(id),
+            FOREIGN KEY (attended_by) REFERENCES admins(id)
+          )
+        `);
+        console.log('Migración: tabla service_requests creada.');
+      }
+
       console.log('Base de datos ya inicializada — se omite el seed.');
       await connection.end();
       return;
@@ -73,6 +100,7 @@ async function seed() {
   }
 
   await connection.query(`
+    DROP TABLE IF EXISTS service_requests;
     DROP TABLE IF EXISTS order_items;
     DROP TABLE IF EXISTS orders;
     DROP TABLE IF EXISTS sessions;
@@ -153,6 +181,22 @@ async function seed() {
       special_notes VARCHAR(255) NULL,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
       FOREIGN KEY (product_id) REFERENCES products(id)
+    );
+
+    CREATE TABLE service_requests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      session_id INT NOT NULL,
+      table_id INT NULL,
+      type ENUM('terminar_pedido') NOT NULL DEFAULT 'terminar_pedido',
+      status ENUM('pendiente', 'atendida') NOT NULL DEFAULT 'pendiente',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      attended_at TIMESTAMP NULL,
+      attended_by INT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES sessions(id),
+      FOREIGN KEY (table_id) REFERENCES \`tables\`(id),
+      FOREIGN KEY (attended_by) REFERENCES admins(id)
     );
   `);
 

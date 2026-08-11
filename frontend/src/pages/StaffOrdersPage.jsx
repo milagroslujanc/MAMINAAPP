@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import ConfirmModal from '../components/ConfirmModal';
+import StaffAlertsBanner from '../components/StaffAlertsBanner';
 import { clearStaffSession } from '../auth';
 
 function formatTime(iso) {
@@ -350,6 +351,8 @@ export default function StaffOrdersPage({ roleRequired }) {
   );
   const visibleOrders = view === 'active' ? activeOrders : historyOrders;
   const panelLink = staff?.role === 'admin' ? '/admin/panel' : null;
+  const salonPath = staff?.role === 'admin' ? '/admin/salon' : '/mesero/mesas';
+  const pedidosPath = staff?.role === 'admin' ? '/admin/pedidos' : '/mesero/pedidos';
   const canEdit = editable(selected);
 
   return (
@@ -370,6 +373,9 @@ export default function StaffOrdersPage({ roleRequired }) {
               Volver al panel
             </Link>
           )}
+          <Link className="btn" to={salonPath}>
+            Salón
+          </Link>
           <button type="button" className="btn" onClick={load}>
             Refrescar
           </button>
@@ -378,6 +384,8 @@ export default function StaffOrdersPage({ roleRequired }) {
           </button>
         </div>
       </div>
+
+      <StaffAlertsBanner pedidosPath={pedidosPath} />
 
       <div className="menu-tabs">
         <button

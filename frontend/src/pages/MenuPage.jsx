@@ -45,6 +45,7 @@ export default function MenuPage() {
   const [success, setSuccess] = useState('');
   const [sending, setSending] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [requestingFinish, setRequestingFinish] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -171,6 +172,22 @@ export default function MenuPage() {
 
   function removeItem(productId) {
     setCart((prev) => prev.filter((i) => i.productId !== productId));
+  }
+
+  async function requestFinish() {
+    if (!session?.sessionToken || !activeOrder) return;
+    setRequestingFinish(true);
+    setError('');
+    setSuccess('');
+    try {
+      const result = await api.requestFinishOrder(session.sessionToken);
+      setSuccess(result.message);
+      setActiveOrder((prev) => (prev ? { ...prev, finish_requested: true } : prev));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRequestingFinish(false);
+    }
   }
 
   async function sendOrder() {
@@ -335,6 +352,21 @@ export default function MenuPage() {
                 <span>Total</span>
                 <strong>S/ {Number(activeOrder.total).toFixed(2)}</strong>
               </p>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={requestingFinish || activeOrder.finish_requested}
+                onClick={requestFinish}
+              >
+                {activeOrder.finish_requested
+                  ? 'Solicitud enviada al mesero'
+                  : requestingFinish
+                    ? 'Enviando…'
+                    : 'Solicitar terminar pedido'}
+              </button>
+              {activeOrder.finish_requested && (
+                <p className="muted">Un mesero atenderá tu mesa en breve.</p>
+              )}
             </div>
           ) : (
             <p className="muted">Aún no tienes un pedido activo.</p>

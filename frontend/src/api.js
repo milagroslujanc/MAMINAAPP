@@ -93,6 +93,8 @@ export const api = {
   cancelAdminOrder: (id) =>
     request(`/api/admin/orders/${id}/cancel`, { method: 'POST' }),
   getAdminStats: () => request('/api/admin/stats'),
+  getAdminStatsOrders: (from, to) =>
+    request(`/api/admin/stats/orders?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   closeAdminOrderSession: (id) =>
     request(`/api/admin/orders/${id}/close-session`, { method: 'POST' }),
   updateOrderNotes: (id, notes) =>
@@ -112,4 +114,25 @@ export const api = {
     }),
   removeOrderItem: (orderId, itemId) =>
     request(`/api/admin/orders/${orderId}/items/${itemId}`, { method: 'DELETE' }),
+  requestFinishOrder: (sessionToken) =>
+    request('/api/orders/request-finish', {
+      method: 'POST',
+      body: JSON.stringify({ sessionToken }),
+    }),
+  getFloorTables: () => request('/api/admin/floor/tables'),
+  openFloorTable: (id) =>
+    request(`/api/admin/floor/tables/${id}/open`, { method: 'POST' }),
+  openFloorTakeaway: () => request('/api/admin/floor/takeaway', { method: 'POST' }),
+  getStaffAlerts: () => request('/api/admin/alerts'),
+  attendStaffAlert: (id) =>
+    request(`/api/admin/alerts/${id}/attend`, { method: 'POST' }),
+  staffAlertsStreamUrl: () => {
+    try {
+      const raw = localStorage.getItem('mamina_admin');
+      const token = raw ? JSON.parse(raw)?.token : '';
+      return `${API_BASE}/api/admin/alerts/stream?token=${encodeURIComponent(token || '')}`;
+    } catch {
+      return `${API_BASE}/api/admin/alerts/stream`;
+    }
+  },
 };

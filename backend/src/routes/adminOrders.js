@@ -69,6 +69,26 @@ router.get(
        FROM orders`
     );
 
+    const [currentMonth] = await pool.query(
+      `SELECT DAY(created_at) AS day, COALESCE(SUM(total), 0) AS total
+       FROM orders
+       WHERE status = 'entregado'
+         AND YEAR(created_at) = YEAR(CURDATE())
+         AND MONTH(created_at) = MONTH(CURDATE())
+       GROUP BY DAY(created_at)
+       ORDER BY day`
+    );
+
+    const [previousMonth] = await pool.query(
+      `SELECT DAY(created_at) AS day, COALESCE(SUM(total), 0) AS total
+       FROM orders
+       WHERE status = 'entregado'
+         AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+         AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+       GROUP BY DAY(created_at)
+       ORDER BY day`
+    );
+
     const row = rows[0] || {};
     res.json({
       daily: {
@@ -86,6 +106,66 @@ router.get(
         completedOrders: Number(row.yearlyCompleted),
         clients: Number(row.yearlyClients),
       },
+      salesHistogram: {
+        currentMonth: currentMonth.map((d) => ({ day: Number(d.day), total: Number(d.total) })),
+        previousMonth: previousMonth.map((d) => ({ day: Number(d.day), total: Number(d.total) })),
+        currentMonthLabel: new Date().toLocaleDateString('es-PE', { month: 'long', year: 'numeric' }),
+        previousMonthLabel: new Date(
+          new Date().getFullYear(),
+          new Date().getMonth() - 1,
+          1
+        ).toLocaleDateString('es-PE', { month: 'long', year: 'numeric' }),
+        daysInCurrentMonth: new Date(
+          new Date().getFullYear(),
+          new Date().getMonth() + 1,
+          0
+        ).getDate(),
+        daysInPreviousMonth: new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          0
+        ).getDate(),
+      },
+    });
+  })
+);
+
+router.get(
+  '/stats/orders',
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const from = String(req.query.from || '').slice(0, 10);
+    const to = String(req.query.to || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return res.status(400).json({ message: 'Parámetros from y to requeridos (YYYY-MM-DD)' });
+    }
+    if (from > to) {
+      return res.status(400).json({ message: 'El rango de fechas es inválido' });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at,
+              t.number AS table_number
+       FROM orders o
+       LEFT JOIN \`tables\` t ON t.id = o.table_id
+       WHERE o.status = 'entregado'
+         AND DATE(o.created_at) BETWEEN ? AND ?
+       ORDER BY o.created_at DESC`,
+      [from, to]
+    );
+
+    const list = rows.map((o) => ({
+      ...o,
+      total: Number(o.total),
+    }));
+    const totalSales = list.reduce((sum, o) => sum + o.total, 0);
+
+    res.json({
+      from,
+      to,
+      totalSales,
+      count: list.length,
+      orders: list,
     });
   })
 );
