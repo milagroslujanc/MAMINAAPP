@@ -60,8 +60,8 @@ export default function StaffLoginPage({ expectedRole }) {
       // Siempre guardar sesión y mandar al home del rol real
       setStaffSession(data);
 
-      if (expectedRole === 'admin' && role === 'mesero') {
-        navigate('/mesero/pedidos', { replace: true });
+        if (expectedRole === 'admin' && role === 'mesero') {
+        navigate('/mesero/mesas', { replace: true });
         return;
       }
       if (expectedRole === 'mesero' && role === 'admin') {

@@ -1257,3 +1257,199 @@ h1 {
     height: 72px;
   }
 }
+
+/* Alertas mesero / salón / stats */
+.staff-alerts {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.staff-alert-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.15rem;
+  border-radius: 16px;
+  border: 1px solid rgba(196, 120, 20, 0.35);
+  background: rgba(196, 120, 20, 0.1);
+}
+
+.staff-alert-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.staff-floor {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.floor-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.floor-tile {
+  display: grid;
+  gap: 0.45rem;
+  cursor: default;
+  text-align: left;
+}
+
+.floor-tile .btn {
+  margin-top: 0.35rem;
+}
+
+.floor-order-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 1.15rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.floor-product-list {
+  max-height: 240px;
+  overflow: auto;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.floor-product-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--gris);
+  border-radius: 12px;
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+}
+
+.floor-product-row:hover {
+  border-color: var(--rojo);
+}
+
+.sales-histogram-section {
+  margin-bottom: 0.25rem;
+}
+
+.histogram-legend {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.legend-current::before,
+.legend-previous::before {
+  content: '';
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.4rem;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.legend-current::before {
+  background: var(--rojo, #901020);
+}
+
+.legend-previous::before {
+  background: rgba(144, 16, 32, 0.28);
+}
+
+.histogram-wrap {
+  overflow-x: auto;
+}
+
+.sales-histogram {
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+}
+
+.hist-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.hist-axis {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.hist-bar-curr {
+  fill: var(--rojo, #901020);
+  opacity: 1;
+}
+
+.hist-bar-prev {
+  fill: var(--rojo, #901020);
+  opacity: 0.28;
+}
+
+.stat-card-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.stat-card-button.is-active,
+.stat-card-button:hover {
+  border-color: var(--rojo);
+  box-shadow: 0 0 0 1px rgba(144, 16, 32, 0.2);
+}
+
+.sales-explorer {
+  margin-top: 0.25rem;
+}
+
+.sales-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.sales-filters label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.sales-filters input[type='date'] {
+  min-width: 10.5rem;
+}
+
+.sales-total-banner {
+  margin: 0 0 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: var(--gris);
+  border: 1px solid var(--line);
+  font-size: 1.05rem;
+}
+
+.order-detail-modal {
+  max-width: 480px;
+  width: min(100%, 480px);
+  max-height: 85vh;
+  overflow: auto;
+}
+
+.status-card .btn {
+  margin-top: 0.75rem;
+}

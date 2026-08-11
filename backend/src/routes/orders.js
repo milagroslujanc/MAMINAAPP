@@ -239,6 +239,13 @@ router.get(
     const [tables] = await pool.query('SELECT number FROM `tables` WHERE id = ?', [order.table_id]);
     const tableNumber = tables[0]?.number ?? null;
 
+    const [pendingReq] = await pool.query(
+      `SELECT id FROM service_requests
+       WHERE order_id = ? AND type = 'terminar_pedido' AND status = 'pendiente'
+       LIMIT 1`,
+      [order.id]
+    );
+
     res.json({
       id: order.id,
       status: order.status,
@@ -247,6 +254,90 @@ router.get(
       notes: order.notes,
       created_at: order.created_at,
       table_number: tableNumber,
+      finish_requested: Boolean(pendingReq[0]),
+    });
+  })
+);
+
+/** Cliente solicita terminar pedido → alerta al mesero (no cierra el pedido) */
+router.post(
+  '/request-finish',
+  asyncHandler(async (req, res) => {
+    const { sessionToken } = req.body || {};
+    if (!sessionToken) {
+      return res.status(400).json({ message: 'sessionToken es obligatorio' });
+    }
+
+    const [sessions] = await pool.query(
+      `SELECT id, table_id FROM sessions WHERE token = ? AND status = 'activa'`,
+      [sessionToken]
+    );
+    const session = sessions[0];
+    if (!session) {
+      return res.status(404).json({ message: 'Sesión inválida' });
+    }
+
+    const [orders] = await pool.query(
+      `SELECT id, status, total, order_type, table_id
+       FROM orders
+       WHERE session_id = ? AND status NOT IN ('cancelado', 'entregado')
+       ORDER BY id DESC
+       LIMIT 1`,
+      [session.id]
+    );
+    const order = orders[0];
+    if (!order) {
+      return res.status(404).json({ message: 'No hay pedido activo para solicitar el cierre' });
+    }
+
+    const [existing] = await pool.query(
+      `SELECT id FROM service_requests
+       WHERE order_id = ? AND type = 'terminar_pedido' AND status = 'pendiente'
+       LIMIT 1`,
+      [order.id]
+    );
+    if (existing[0]) {
+      return res.json({
+        id: existing[0].id,
+        orderId: order.id,
+        message: 'Ya solicitaste terminar el pedido. Un mesero te atenderá pronto.',
+        alreadyRequested: true,
+      });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO service_requests (order_id, session_id, table_id, type, status)
+       VALUES (?, ?, ?, 'terminar_pedido', 'pendiente')`,
+      [order.id, session.id, order.table_id || session.table_id || null]
+    );
+
+    let tableNumber = null;
+    const tableId = order.table_id || session.table_id;
+    if (tableId) {
+      const [tables] = await pool.query('SELECT number FROM `tables` WHERE id = ?', [tableId]);
+      tableNumber = tables[0]?.number ?? null;
+    }
+
+    const alert = {
+      id: result.insertId,
+      order_id: order.id,
+      session_id: session.id,
+      table_id: tableId || null,
+      type: 'terminar_pedido',
+      status: 'pendiente',
+      created_at: new Date().toISOString(),
+      total: Number(order.total),
+      order_status: order.status,
+      table_number: tableNumber,
+    };
+
+    bus.emit('alert:new', alert);
+
+    res.status(201).json({
+      id: alert.id,
+      orderId: order.id,
+      message: 'Solicitud enviada. Un mesero atenderá tu mesa en breve.',
+      alreadyRequested: false,
     });
   })
 );

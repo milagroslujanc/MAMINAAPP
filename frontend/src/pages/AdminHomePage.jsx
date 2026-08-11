@@ -61,6 +61,9 @@ export default function AdminHomePage() {
         <Link className="btn primary" to="/admin/pedidos">
           Gestionar pedidos
         </Link>
+        <Link className="btn primary" to="/admin/salon">
+          Salón (mesas sin QR)
+        </Link>
         <Link className="btn primary" to="/admin/menu">
           Gestionar menú
         </Link>

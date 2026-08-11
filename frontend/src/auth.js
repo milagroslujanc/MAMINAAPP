@@ -23,7 +23,7 @@ export function getStaffRole() {
 }
 
 export function homeForRole(role) {
-  if (role === 'mesero') return '/mesero/pedidos';
+  if (role === 'mesero') return '/mesero/mesas';
   if (role === 'admin') return '/admin/panel';
   return '/admin';
 }
