@@ -230,10 +230,10 @@ router.get(
        LIMIT 1`,
       [sessionId]
     );
-
+//cambio
     const order = orders[0];
     if (!order) {
-      return res.status(404).json({ message: 'Pedido no encontrado' });
+      return res.status(200).json({ hasActiveOrder: false });
     }
 
     const [tables] = await pool.query('SELECT number FROM `tables` WHERE id = ?', [order.table_id]);
@@ -247,6 +247,7 @@ router.get(
     );
 
     res.json({
+      hasActiveOrder: true,
       id: order.id,
       status: order.status,
       total: Number(order.total),
