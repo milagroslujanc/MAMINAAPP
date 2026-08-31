@@ -247,9 +247,6 @@ async function loadActiveOrder() {
       <section className="center-card">
         <h1>Sin sesión de mesa</h1>
         <p>Escanea el QR para poder iniciar un pedido.</p>
-        <Link className="btn" to="/">
-          Ir a recepción
-        </Link>
       </section>
     );
   }
