@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
 
 function normalizeRole(payload) {
-  if (payload?.role === 'admin' || payload?.role === 'mesero') return payload.role;
+  if (payload?.role === 'admin' || payload?.role === 'mesero' || payload?.role === 'cocina') {
+    return payload.role;
+  }
   if (payload?.username === 'mesero') return 'mesero';
+  if (payload?.username === 'cocina') return 'cocina';
   return 'admin';
 }
 
@@ -30,7 +33,7 @@ function requireAdmin(req, res, next) {
   authStaff(req, res, () => {
     if (req.staff?.role !== 'admin') {
       return res.status(403).json({
-        message: 'Tu perfil de mesero solo puede gestionar pedidos. Entra por /mesero',
+        message: 'Solo el administrador puede acceder a esta sección',
       });
     }
     next();
@@ -47,6 +50,16 @@ function requireStaff(req, res, next) {
   });
 }
 
+/** Cocina o administrador */
+function requireKitchen(req, res, next) {
+  authStaff(req, res, () => {
+    if (!['admin', 'cocina'].includes(req.staff?.role)) {
+      return res.status(403).json({ message: 'Acceso denegado. Entra por /cocina' });
+    }
+    next();
+  });
+}
+
 const authAdmin = requireAdmin;
 
-module.exports = { authStaff, requireAdmin, requireStaff, authAdmin, normalizeRole };
+module.exports = { authStaff, requireAdmin, requireStaff, requireKitchen, authAdmin, normalizeRole };

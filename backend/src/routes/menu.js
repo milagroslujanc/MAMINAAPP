@@ -11,7 +11,7 @@ router.get(
       `SELECT id, name, sort_order FROM categories ORDER BY sort_order`
     );
     const [products] = await pool.query(
-      `SELECT id, category_id, name, description, price, image_url, stock, is_active
+      `SELECT id, category_id, name, description, price, image_url, is_active
        FROM products WHERE is_active = 1`
     );
 
@@ -22,7 +22,6 @@ router.get(
         .map((p) => ({
           ...p,
           price: Number(p.price),
-          agotado: Number(p.stock) <= 0,
         })),
     }));
 

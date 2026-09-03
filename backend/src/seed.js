@@ -46,9 +46,13 @@ async function seed() {
       );
       if (roleCols[0].c === 0) {
         await connection.query(
-          `ALTER TABLE admins ADD COLUMN role ENUM('admin', 'mesero') NOT NULL DEFAULT 'admin' AFTER full_name`
+          `ALTER TABLE admins ADD COLUMN role ENUM('admin', 'mesero', 'cocina') NOT NULL DEFAULT 'admin' AFTER full_name`
         );
         console.log('Migración: columna admins.role agregada.');
+      } else {
+        await connection.query(
+          `ALTER TABLE admins MODIFY COLUMN role ENUM('admin', 'mesero', 'cocina') NOT NULL DEFAULT 'admin'`
+        );
       }
 
       const meseroHash = await bcrypt.hash('mesero123', 10);
@@ -64,6 +68,18 @@ async function seed() {
       );
       await connection.query(
         `UPDATE admins SET role = 'admin' WHERE username = 'admin' AND (role IS NULL OR role = '')`
+      );
+
+      const cocinaHash = await bcrypt.hash('cocina123', 10);
+      await connection.query(
+        `INSERT INTO admins (username, password_hash, full_name, role)
+         SELECT 'cocina', ?, 'Cocina La Mamina', 'cocina'
+         FROM DUAL
+         WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'cocina')`,
+        [cocinaHash]
+      );
+      await connection.query(
+        `UPDATE admins SET role = 'cocina', full_name = 'Cocina La Mamina' WHERE username = 'cocina'`
       );
 
       // Migración: alertas de servicio (solicitar terminar pedido)
@@ -114,7 +130,7 @@ async function seed() {
       username VARCHAR(50) NOT NULL UNIQUE,
       password_hash VARCHAR(255) NOT NULL,
       full_name VARCHAR(100) NOT NULL,
-      role ENUM('admin', 'mesero') NOT NULL DEFAULT 'admin',
+      role ENUM('admin', 'mesero', 'cocina') NOT NULL DEFAULT 'admin',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -202,12 +218,24 @@ async function seed() {
 
   const passwordHash = await bcrypt.hash('admin123', 10);
   const meseroHash = await bcrypt.hash('mesero123', 10);
+  const cocinaHash = await bcrypt.hash('cocina123', 10);
 
   await connection.query(
     `INSERT INTO admins (username, password_hash, full_name, role) VALUES
       (?, ?, ?, 'admin'),
-      (?, ?, ?, 'mesero')`,
-    ['admin', passwordHash, 'Administrador La Mamina', 'mesero', meseroHash, 'Mesero La Mamina']
+      (?, ?, ?, 'mesero'),
+      (?, ?, ?, 'cocina')`,
+    [
+      'admin',
+      passwordHash,
+      'Administrador La Mamina',
+      'mesero',
+      meseroHash,
+      'Mesero La Mamina',
+      'cocina',
+      cocinaHash,
+      'Cocina La Mamina',
+    ]
   );
 
   const tables = Array.from({ length: 13 }, (_, i) => {
@@ -306,6 +334,7 @@ async function seed() {
 
   console.log('Base de datos mamina creada y sembrada correctamente.');
   console.log('Admin → usuario: admin | contraseña: admin123');
+  console.log('Cocina → usuario: cocina | contraseña: cocina123');
   await connection.end();
 }
 

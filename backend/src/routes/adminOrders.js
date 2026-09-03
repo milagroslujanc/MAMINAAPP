@@ -18,6 +18,16 @@ async function recalcTotal(conn, orderId) {
   return total;
 }
 
+async function hasPendingFinish(conn, orderId) {
+  const [rows] = await conn.query(
+    `SELECT id FROM service_requests
+     WHERE order_id = ? AND type = 'terminar_pedido' AND status = 'pendiente'
+     LIMIT 1`,
+    [orderId]
+  );
+  return Boolean(rows[0]);
+}
+
 async function getOrderDetail(orderId) {
   const [orders] = await pool.query(
     `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at,
@@ -37,10 +47,18 @@ async function getOrderDetail(orderId) {
     [orderId]
   );
 
+  const [pending] = await pool.query(
+    `SELECT id FROM service_requests
+     WHERE order_id = ? AND type = 'terminar_pedido' AND status = 'pendiente'
+     LIMIT 1`,
+    [orderId]
+  );
+
   return {
     ...order,
     total: Number(order.total),
     charged: order.status !== 'cancelado',
+    finish_requested: Boolean(pending[0]),
     items: items.map((i) => ({
       ...i,
       unit_price: Number(i.unit_price),
@@ -191,7 +209,11 @@ router.get(
   asyncHandler(async (_req, res) => {
     const [rows] = await pool.query(
       `SELECT o.id, o.status, o.total, o.order_type, o.notes, o.created_at, o.updated_at,
-              t.number AS table_number, s.status AS session_status
+              t.number AS table_number, s.status AS session_status,
+              EXISTS (
+                SELECT 1 FROM service_requests r
+                WHERE r.order_id = o.id AND r.type = 'terminar_pedido' AND r.status = 'pendiente'
+              ) AS finish_requested
        FROM orders o
        LEFT JOIN \`tables\` t ON t.id = o.table_id
        LEFT JOIN sessions s ON s.id = o.session_id
@@ -204,6 +226,7 @@ router.get(
         ...o,
         total: Number(o.total),
         charged: o.status !== 'cancelado',
+        finish_requested: Boolean(o.finish_requested),
       }))
     );
   })
@@ -259,9 +282,15 @@ router.post(
           message: !orders[0] ? 'Pedido no encontrado' : 'No se puede editar este pedido',
         });
       }
+      if (await hasPendingFinish(conn, orderId)) {
+        await conn.rollback();
+        return res.status(409).json({
+          message: 'Ya se solicitó la cuenta. No se pueden agregar más productos a cocina.',
+        });
+      }
 
       const [products] = await conn.query(
-        `SELECT id, name, price, stock, is_active FROM products WHERE id = ? FOR UPDATE`,
+        `SELECT id, name, price, is_active FROM products WHERE id = ? FOR UPDATE`,
         [productId]
       );
       const product = products[0];
@@ -269,17 +298,12 @@ router.post(
         await conn.rollback();
         return res.status(400).json({ message: 'Producto no disponible' });
       }
-      if (Number(product.stock) < qty) {
-        await conn.rollback();
-        return res.status(400).json({ message: `Stock insuficiente de ${product.name}` });
-      }
 
       await conn.query(
         `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, special_notes)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [orderId, product.id, product.name, qty, product.price, specialNotes || null]
       );
-      await conn.query(`UPDATE products SET stock = stock - ? WHERE id = ?`, [qty, product.id]);
       const total = await recalcTotal(conn, orderId);
       await conn.commit();
 
@@ -319,6 +343,12 @@ router.patch(
           message: !orders[0] ? 'Pedido no encontrado' : 'No se puede editar este pedido',
         });
       }
+      if (quantity !== undefined && (await hasPendingFinish(conn, orderId))) {
+        await conn.rollback();
+        return res.status(409).json({
+          message: 'Ya se solicitó la cuenta. No se pueden agregar más productos a cocina.',
+        });
+      }
 
       const [items] = await conn.query(
         `SELECT id, product_id, quantity, special_notes FROM order_items WHERE id = ? AND order_id = ? FOR UPDATE`,
@@ -332,25 +362,7 @@ router.patch(
 
       if (quantity !== undefined) {
         const newQty = Math.max(1, Number(quantity) || 1);
-        const diff = newQty - Number(item.quantity);
-        if (diff !== 0) {
-          const [products] = await conn.query(
-            `SELECT id, name, stock FROM products WHERE id = ? FOR UPDATE`,
-            [item.product_id]
-          );
-          const product = products[0];
-          if (!product) {
-            await conn.rollback();
-            return res.status(400).json({ message: 'Producto no encontrado' });
-          }
-          if (diff > 0 && Number(product.stock) < diff) {
-            await conn.rollback();
-            return res.status(400).json({ message: `Stock insuficiente de ${product.name}` });
-          }
-          await conn.query(`UPDATE products SET stock = stock - ? WHERE id = ?`, [
-            diff,
-            item.product_id,
-          ]);
+        if (newQty !== Number(item.quantity)) {
           await conn.query(`UPDATE order_items SET quantity = ? WHERE id = ?`, [newQty, itemId]);
         }
       }
@@ -407,10 +419,6 @@ router.delete(
         return res.status(404).json({ message: 'Ítem no encontrado' });
       }
 
-      await conn.query(`UPDATE products SET stock = stock + ? WHERE id = ?`, [
-        item.quantity,
-        item.product_id,
-      ]);
       await conn.query(`DELETE FROM order_items WHERE id = ?`, [itemId]);
 
       const [remaining] = await conn.query(
@@ -537,18 +545,6 @@ router.post(
       if (order.status === 'entregado') {
         await conn.rollback();
         return res.status(409).json({ message: 'No se puede cancelar un pedido entregado' });
-      }
-
-      const [items] = await conn.query(
-        `SELECT product_id, quantity FROM order_items WHERE order_id = ?`,
-        [orderId]
-      );
-
-      for (const item of items) {
-        await conn.query(`UPDATE products SET stock = stock + ? WHERE id = ?`, [
-          item.quantity,
-          item.product_id,
-        ]);
       }
 
       await conn.query(

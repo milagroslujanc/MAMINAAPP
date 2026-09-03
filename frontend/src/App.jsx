@@ -30,7 +30,8 @@ export default function App() {
           <Route path="/menu" element={<MenuPage />} />
 
           {/* Cocina */}
-          <Route path="/cocina" element={<KitchenPage />} />
+          <Route path="/cocina" element={<StaffLoginPage expectedRole="cocina" />} />
+          <Route path="/cocina/pedidos" element={<KitchenPage />} />
 
           {/* Administrador */}
           <Route path="/admin" element={<StaffLoginPage expectedRole="admin" />} />

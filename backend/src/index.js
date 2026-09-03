@@ -58,5 +58,6 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`API La Mamina (Sprint 1 · DEMO) → http://localhost:${PORT}`);
   console.log('Admin demo → admin / admin123');
+  console.log('Cocina demo → cocina / cocina123');
   ensureMigrations();
 });

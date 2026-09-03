@@ -25,5 +25,6 @@ export function getStaffRole() {
 export function homeForRole(role) {
   if (role === 'mesero') return '/mesero/mesas';
   if (role === 'admin') return '/admin/panel';
+  if (role === 'cocina') return '/cocina/pedidos';
   return '/admin';
 }

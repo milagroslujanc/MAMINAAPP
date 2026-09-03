@@ -58,7 +58,15 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
-  kitchenStreamUrl: () => `${API_BASE}/api/kitchen/stream`,
+  kitchenStreamUrl: () => {
+    try {
+      const raw = localStorage.getItem('mamina_admin');
+      const token = raw ? JSON.parse(raw)?.token : '';
+      return `${API_BASE}/api/kitchen/stream?token=${encodeURIComponent(token || '')}`;
+    } catch {
+      return `${API_BASE}/api/kitchen/stream`;
+    }
+  },
   login: (username, password) =>
     request('/api/auth/login', {
       method: 'POST',

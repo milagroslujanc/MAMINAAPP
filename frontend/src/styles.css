@@ -624,7 +624,7 @@ h1 {
 
 .order-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 0.75rem;
   align-content: start;
 }
@@ -642,6 +642,46 @@ h1 {
   gap: 0.35rem;
   transition: transform 0.15s ease;
   box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
+  font-size: 200%;
+}
+
+.order-card p,
+.order-card strong {
+  font-size: inherit;
+}
+
+.status-pill {
+  text-transform: capitalize;
+  color: var(--rojo);
+  margin: 0;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.order-detail {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 1.1rem;
+  min-height: 320px;
+  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
+  font-size: 200%;
+}
+
+.order-detail h2 {
+  font-size: 1.15em;
+}
+
+.precuenta-modal {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.precuenta-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .order-card:hover {
@@ -659,23 +699,6 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.status-pill {
-  text-transform: capitalize;
-  color: var(--rojo);
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.order-detail {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 1.1rem;
-  min-height: 320px;
-  box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
 }
 
 .detail-items {
