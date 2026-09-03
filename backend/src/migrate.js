@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const pool = require('./config/db');
 
 async function ensureMigrations() {
@@ -28,6 +29,27 @@ async function ensureMigrations() {
       `);
       console.log('Migración: tabla service_requests creada.');
     }
+
+    const [roleCols] = await pool.query(
+      `SELECT COLUMN_TYPE FROM information_schema.columns
+       WHERE table_schema = ? AND table_name = 'admins' AND column_name = 'role'`,
+      [dbName]
+    );
+    if (roleCols[0] && !String(roleCols[0].COLUMN_TYPE).includes('cocina')) {
+      await pool.query(
+        `ALTER TABLE admins MODIFY COLUMN role ENUM('admin', 'mesero', 'cocina') NOT NULL DEFAULT 'admin'`
+      );
+      console.log('Migración: rol cocina agregado a admins.role.');
+    }
+
+    const cocinaHash = await bcrypt.hash('cocina123', 10);
+    await pool.query(
+      `INSERT INTO admins (username, password_hash, full_name, role)
+       SELECT 'cocina', ?, 'Cocina La Mamina', 'cocina'
+       FROM DUAL
+       WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'cocina')`,
+      [cocinaHash]
+    );
   } catch (err) {
     console.warn('No se pudo verificar migraciones:', err.message);
   }

@@ -34,8 +34,6 @@ async function upsertOrderItem(conn, orderId, product, qty, specialNotes) {
       [orderId, product.id, product.name, qty, product.price, specialNotes || null]
     );
   }
-
-  await conn.query('UPDATE products SET stock = stock - ? WHERE id = ?', [qty, product.id]);
 }
 
 router.post(
@@ -66,7 +64,7 @@ router.post(
 
       for (const item of items) {
         const [products] = await conn.query(
-          'SELECT id, name, price, stock, is_active FROM products WHERE id = ? FOR UPDATE',
+          'SELECT id, name, price, is_active FROM products WHERE id = ? FOR UPDATE',
           [item.productId]
         );
         const product = products[0];
@@ -74,15 +72,7 @@ router.post(
           await conn.rollback();
           return res.status(400).json({ message: `Producto ${item.productId} no existe` });
         }
-        if (Number(product.stock) <= 0) {
-          await conn.rollback();
-          return res.status(400).json({ message: `${product.name} está agotado` });
-        }
         const qty = Math.max(1, Number(item.quantity) || 1);
-        if (Number(product.stock) < qty) {
-          await conn.rollback();
-          return res.status(400).json({ message: `Stock insuficiente de ${product.name}` });
-        }
         resolved.push({ product, quantity: qty, specialNotes: item.specialNotes || null });
       }
 
@@ -100,6 +90,19 @@ router.post(
       let orderNotes = notes || null;
 
       if (existingOrders[0]) {
+        const [pendingFinish] = await conn.query(
+          `SELECT id FROM service_requests
+           WHERE order_id = ? AND type = 'terminar_pedido' AND status = 'pendiente'
+           LIMIT 1`,
+          [existingOrders[0].id]
+        );
+        if (pendingFinish[0]) {
+          await conn.rollback();
+          return res.status(409).json({
+            message: 'Ya se solicitó la cuenta. No se pueden agregar más productos a cocina.',
+          });
+        }
+
         orderId = existingOrders[0].id;
         orderStatus = existingOrders[0].status;
 
@@ -162,10 +165,6 @@ router.post(
             row.specialNotes,
           ]
         );
-        await conn.query('UPDATE products SET stock = stock - ? WHERE id = ?', [
-          row.quantity,
-          row.product.id,
-        ]);
       }
 
       await conn.commit();
@@ -246,6 +245,12 @@ router.get(
       [order.id]
     );
 
+    const [items] = await pool.query(
+      `SELECT id, product_name, quantity, unit_price, special_notes
+       FROM order_items WHERE order_id = ?`,
+      [order.id]
+    );
+
     res.json({
       hasActiveOrder: true,
       id: order.id,
@@ -256,6 +261,11 @@ router.get(
       created_at: order.created_at,
       table_number: tableNumber,
       finish_requested: Boolean(pendingReq[0]),
+      items: items.map((i) => ({
+        ...i,
+        quantity: Number(i.quantity),
+        unit_price: Number(i.unit_price),
+      })),
     });
   })
 );

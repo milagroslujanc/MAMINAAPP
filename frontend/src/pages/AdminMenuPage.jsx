@@ -10,7 +10,6 @@ const EMPTY_FORM = {
   description: '',
   price: '',
   imageUrl: '',
-  stock: '10',
   isActive: true,
 };
 
@@ -89,7 +88,6 @@ export default function AdminMenuPage() {
       description: product.description || '',
       price: String(product.price),
       imageUrl: product.image_url || '',
-      stock: String(product.stock ?? 0),
       isActive: Boolean(product.is_active),
     });
     setError('');
@@ -109,7 +107,6 @@ export default function AdminMenuPage() {
       description: form.description,
       price: Number(form.price),
       imageUrl: form.imageUrl,
-      stock: Number(form.stock),
       isActive: Boolean(form.isActive),
     };
 
@@ -191,7 +188,7 @@ export default function AdminMenuPage() {
           <p className="eyebrow">MMN-18 · Panel administrador</p>
           <h1>Gestionar menú</h1>
           <p className="muted">
-            Agrega platos, cambia precios o desactiva productos agotados. Los cambios se reflejan al
+            Agrega platos, cambia precios o desactiva productos. Los cambios se reflejan al
             instante en el menú de clientes.
           </p>
         </div>
@@ -264,16 +261,6 @@ export default function AdminMenuPage() {
                 value={form.price}
                 onChange={(e) => onChange('price', e.target.value)}
                 required
-              />
-            </label>
-            <label>
-              Stock
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={form.stock}
-                onChange={(e) => onChange('stock', e.target.value)}
               />
             </label>
           </div>
@@ -351,13 +338,9 @@ export default function AdminMenuPage() {
                   <div className="product-title-row">
                     <strong>{product.name}</strong>
                     {!product.is_active && <span className="badge-agotado">Oculto</span>}
-                    {product.is_active && product.agotado && (
-                      <span className="badge-agotado">Sin stock</span>
-                    )}
                   </div>
                   <p className="muted">
-                    {product.category_name} · S/ {Number(product.price).toFixed(2)} · Stock{' '}
-                    {product.stock}
+                    {product.category_name} · S/ {Number(product.price).toFixed(2)}
                   </p>
                   <p>{product.description}</p>
                   <div className="admin-product-actions">

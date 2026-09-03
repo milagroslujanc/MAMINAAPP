@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api';
+import ConfirmModal from '../components/ConfirmModal';
+import PrecuentaModal from '../components/PrecuentaModal';
 
 const CART_KEY = 'mamina_cart';
 const STATUS_LABELS = {
@@ -46,6 +47,8 @@ export default function MenuPage() {
   const [sending, setSending] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [requestingFinish, setRequestingFinish] = useState(false);
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const [showPrecuenta, setShowPrecuenta] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +135,10 @@ async function loadActiveOrder() {
   }
 
   function addToCart(product) {
-    if (product.agotado) return;
+    if (activeOrder?.finish_requested) {
+      setError('Ya se solicitó la cuenta. No se pueden agregar más productos.');
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
@@ -172,13 +178,20 @@ async function loadActiveOrder() {
 
   async function requestFinish() {
     if (!session?.sessionToken || !activeOrder) return;
+    setConfirmFinish(false);
     setRequestingFinish(true);
     setError('');
     setSuccess('');
     try {
       const result = await api.requestFinishOrder(session.sessionToken);
       setSuccess(result.message);
-      setActiveOrder((prev) => (prev ? { ...prev, finish_requested: true } : prev));
+      const refreshed = await api.getActiveOrder(session.sessionToken);
+      const next = refreshed.hasActiveOrder === false ? { ...activeOrder, finish_requested: true } : refreshed;
+      setActiveOrder(next);
+      setShowPrecuenta(true);
+      setCart([]);
+      setShowCart(false);
+      sessionStorage.removeItem(CART_KEY);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -189,6 +202,10 @@ async function loadActiveOrder() {
   async function sendOrder() {
     if (!session?.sessionToken) {
       setError('No hay sesión activa. Escanea el QR para poder iniciar un pedido.');
+      return;
+    }
+    if (activeOrder?.finish_requested) {
+      setError('Ya se solicitó la cuenta. No se pueden agregar más productos a cocina.');
       return;
     }
     if (!cart.length) return;
@@ -263,7 +280,12 @@ async function loadActiveOrder() {
               : `Mesa ${session.tableNumber ?? '—'}`}
           </p>
         </div>
-        <button type="button" className="cart-fab" onClick={() => setShowCart(true)}>
+        <button
+          type="button"
+          className="cart-fab"
+          disabled={activeOrder?.finish_requested}
+          onClick={() => setShowCart(true)}
+        >
           Carrito · {count}
           <span>S/ {total.toFixed(2)}</span>
         </button>
@@ -290,20 +312,22 @@ async function loadActiveOrder() {
       {success && <div className="alert ok">{success}</div>}
 
       {selectedTab === 'menu' ? (
-        menu.map((category) => (
+        <>
+          {activeOrder?.finish_requested && (
+            <div className="alert">
+              Ya solicitaste la cuenta. No puedes agregar más productos a cocina.
+            </div>
+          )}
+          {menu.map((category) => (
           <div key={category.id} className="category-block">
             <h2>{category.name}</h2>
             <div className="product-list">
               {category.products.map((product) => (
-                <article
-                  key={product.id}
-                  className={`product-row ${product.agotado ? 'agotado' : ''}`}
-                >
+                <article key={product.id} className="product-row">
                   <img src={product.image_url} alt="" loading="lazy" />
                   <div className="product-info">
                     <div className="product-title-row">
                       <h3>{product.name}</h3>
-                      {product.agotado && <span className="badge-agotado">Agotado</span>}
                     </div>
                     <p>{product.description}</p>
                     <div className="product-actions">
@@ -311,7 +335,7 @@ async function loadActiveOrder() {
                       <button
                         type="button"
                         className="btn small"
-                        disabled={product.agotado}
+                        disabled={activeOrder?.finish_requested}
                         onClick={() => addToCart(product)}
                       >
                         Agregar
@@ -323,6 +347,7 @@ async function loadActiveOrder() {
             </div>
           </div>
         ))
+        </>
       ) : (
         <section className="order-status-panel">
           <div className="status-panel-head">
@@ -349,7 +374,7 @@ async function loadActiveOrder() {
                 type="button"
                 className="btn primary"
                 disabled={requestingFinish || activeOrder.finish_requested}
-                onClick={requestFinish}
+                onClick={() => setConfirmFinish(true)}
               >
                 {activeOrder.finish_requested
                   ? 'Solicitud enviada al mesero'
@@ -358,7 +383,12 @@ async function loadActiveOrder() {
                     : 'Solicitar terminar pedido'}
               </button>
               {activeOrder.finish_requested && (
-                <p className="muted">Un mesero atenderá tu mesa en breve.</p>
+                <>
+                  <p className="muted">Un mesero atenderá tu mesa en breve.</p>
+                  <button type="button" className="btn small" onClick={() => setShowPrecuenta(true)}>
+                    Ver precuenta
+                  </button>
+                </>
               )}
             </div>
           ) : (
@@ -415,7 +445,7 @@ async function loadActiveOrder() {
             <button
               type="button"
               className="btn primary large"
-              disabled={!cart.length || sending}
+              disabled={!cart.length || sending || activeOrder?.finish_requested}
               onClick={sendOrder}
             >
               {sending ? 'Enviando…' : 'Enviar a cocina'}
@@ -423,6 +453,20 @@ async function loadActiveOrder() {
           </div>
         </aside>
       )}
+
+      <ConfirmModal
+        open={confirmFinish}
+        title="Confirmar solicitud"
+        message="¿Solicitar terminar el pedido? Se avisará al mesero y no podrás agregar más productos a cocina."
+        confirmLabel="Sí, solicitar cuenta"
+        onCancel={() => setConfirmFinish(false)}
+        onConfirm={requestFinish}
+      />
+      <PrecuentaModal
+        open={showPrecuenta}
+        order={activeOrder}
+        onClose={() => setShowPrecuenta(false)}
+      />
     </section>
   );
 }

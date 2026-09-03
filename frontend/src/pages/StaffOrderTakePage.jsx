@@ -115,8 +115,8 @@ export default function StaffOrderTakePage() {
   async function loadActiveOrder() {
     if (!session?.sessionToken) return;
     try {
-      const order = await api.getActiveOrder(session.sessionToken);
-      setActiveOrder(order);
+      const data = await api.getActiveOrder(session.sessionToken);
+      setActiveOrder(data.hasActiveOrder ? data : null);
     } catch (err) {
       if (err.message === 'Pedido no encontrado') {
         setActiveOrder(null);
@@ -127,7 +127,10 @@ export default function StaffOrderTakePage() {
   }
 
   function addToCart(product) {
-    if (product.agotado) return;
+    if (activeOrder?.finish_requested) {
+      setError('Ya se solicitó la cuenta. No se pueden agregar más productos.');
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
@@ -169,6 +172,10 @@ export default function StaffOrderTakePage() {
 
   async function sendOrder() {
     if (!session?.sessionToken || !cart.length) return;
+    if (activeOrder?.finish_requested) {
+      setError('Ya se solicitó la cuenta. No se pueden agregar más productos a cocina.');
+      return;
+    }
     setSending(true);
     setError('');
     setSuccess('');
@@ -267,15 +274,11 @@ export default function StaffOrderTakePage() {
             <h2>{category.name}</h2>
             <div className="product-list">
               {category.products.map((product) => (
-                <article
-                  key={product.id}
-                  className={`product-row ${product.agotado ? 'agotado' : ''}`}
-                >
+                <article key={product.id} className="product-row">
                   <img src={product.image_url} alt="" loading="lazy" />
                   <div className="product-info">
                     <div className="product-title-row">
                       <h3>{product.name}</h3>
-                      {product.agotado && <span className="badge-agotado">Agotado</span>}
                     </div>
                     <p>{product.description}</p>
                     <div className="product-actions">
@@ -283,7 +286,7 @@ export default function StaffOrderTakePage() {
                       <button
                         type="button"
                         className="btn small"
-                        disabled={product.agotado}
+                        disabled={activeOrder?.finish_requested}
                         onClick={() => addToCart(product)}
                       >
                         Agregar

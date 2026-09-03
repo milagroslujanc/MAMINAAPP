@@ -103,14 +103,12 @@ export default function StaffOrdersPage({ roleRequired }) {
         const menu = await api.getMenu();
         setProducts(
           menu.flatMap((c) =>
-            c.products
-              .filter((p) => !p.agotado)
-              .map((p) => ({
-                id: p.id,
-                name: p.name,
-                price: p.price,
-                category_name: c.name,
-              }))
+            c.products.map((p) => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              category_name: c.name,
+            }))
           )
         );
       }
@@ -118,14 +116,12 @@ export default function StaffOrdersPage({ roleRequired }) {
       const menu = await api.getMenu();
       setProducts(
         menu.flatMap((c) =>
-          c.products
-            .filter((p) => !p.agotado)
-            .map((p) => ({
-              id: p.id,
-              name: p.name,
-              price: p.price,
-              category_name: c.name,
-            }))
+          c.products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            category_name: c.name,
+          }))
         )
       );
     }
@@ -195,7 +191,13 @@ export default function StaffOrdersPage({ roleRequired }) {
   }
 
   function editable(order) {
-    return order && order.status !== 'cancelado' && order.status !== 'entregado' && order.status !== 'finalizado';
+    return (
+      order &&
+      order.status !== 'cancelado' &&
+      order.status !== 'entregado' &&
+      order.status !== 'finalizado' &&
+      !order.finish_requested
+    );
   }
 
   async function saveNotes() {
@@ -505,6 +507,9 @@ export default function StaffOrdersPage({ roleRequired }) {
                   : `Mesa ${selected.table_number ?? '—'}`}{' '}
                 · <StatusLabel status={selected.status} /> · S/ {Number(selected.total).toFixed(2)}
               </p>
+              {selected.finish_requested && (
+                <div className="alert">El cliente solicitó la cuenta. No se pueden agregar más productos.</div>
+              )}
 
               {canEdit && (
                 <button
@@ -650,7 +655,7 @@ export default function StaffOrdersPage({ roleRequired }) {
         title={confirm?.title}
         message={confirm?.message}
         confirmLabel={confirm?.confirmLabel}
-        danger
+        danger={confirm?.type === 'cancel-order' || confirm?.type === 'remove-item'}
         onCancel={() => setConfirm(null)}
         onConfirm={runConfirm}
       />

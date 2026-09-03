@@ -10,12 +10,13 @@ import {
 
 /**
  * Login de personal.
- * expectedRole: 'admin' | 'mesero'
- * Si ya hay sesión válida, redirige al home del rol.
+ * expectedRole: 'admin' | 'mesero' | 'cocina'
  */
 export default function StaffLoginPage({ expectedRole }) {
   const navigate = useNavigate();
-  const [username, setUsername] = useState(expectedRole === 'mesero' ? 'mesero' : 'admin');
+  const defaultUser =
+    expectedRole === 'mesero' ? 'mesero' : expectedRole === 'cocina' ? 'cocina' : 'admin';
+  const [username, setUsername] = useState(defaultUser);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,16 +57,30 @@ export default function StaffLoginPage({ expectedRole }) {
     try {
       const data = await api.login(username, password);
       const role = data.admin?.role;
-
-      // Siempre guardar sesión y mandar al home del rol real
       setStaffSession(data);
 
-        if (expectedRole === 'admin' && role === 'mesero') {
+      if (expectedRole === 'admin' && role === 'mesero') {
         navigate('/mesero/mesas', { replace: true });
+        return;
+      }
+      if (expectedRole === 'admin' && role === 'cocina') {
+        navigate('/cocina/pedidos', { replace: true });
         return;
       }
       if (expectedRole === 'mesero' && role === 'admin') {
         navigate('/admin/panel', { replace: true });
+        return;
+      }
+      if (expectedRole === 'mesero' && role === 'cocina') {
+        navigate('/cocina/pedidos', { replace: true });
+        return;
+      }
+      if (expectedRole === 'cocina' && role === 'admin') {
+        navigate('/admin/panel', { replace: true });
+        return;
+      }
+      if (expectedRole === 'cocina' && role === 'mesero') {
+        navigate('/mesero/mesas', { replace: true });
         return;
       }
 
@@ -85,17 +100,30 @@ export default function StaffLoginPage({ expectedRole }) {
     );
   }
 
-  const isMesero = expectedRole === 'mesero';
+  const copy =
+    {
+      mesero: {
+        eyebrow: 'Acceso mesero',
+        muted: 'Gestión de pedidos de clientes.',
+      },
+      cocina: {
+        eyebrow: 'Acceso cocina',
+        muted: 'Lista de pedidos para preparación.',
+      },
+      admin: {
+        eyebrow: 'Panel administrativo',
+        muted: 'Acceso total: menú, mesas y pedidos.',
+      },
+    }[expectedRole] || {
+      eyebrow: 'Panel administrativo',
+      muted: 'Acceso total: menú, mesas y pedidos.',
+    };
 
   return (
     <section className="center-card admin-login">
-      <p className="eyebrow">{isMesero ? 'Acceso mesero' : 'Panel administrativo'}</p>
+      <p className="eyebrow">{copy.eyebrow}</p>
       <h1>Iniciar sesión</h1>
-      <p className="muted">
-        {isMesero
-          ? 'Gestión de pedidos de clientes.'
-          : 'Acceso total: menú, mesas y pedidos.'}
-      </p>
+      <p className="muted">{copy.muted}</p>
 
       <form onSubmit={handleSubmit} className="login-form">
         <label>
@@ -122,7 +150,6 @@ export default function StaffLoginPage({ expectedRole }) {
           {loading ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
-      
     </section>
   );
 }

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import { clearStaffSession, homeForRole } from '../auth';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('es-PE', {
@@ -10,6 +12,8 @@ function formatTime(iso) {
 }
 
 export default function KitchenPage() {
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
   const [orders, setOrders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState('');
@@ -30,6 +34,31 @@ export default function KitchenPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      try {
+        const me = await api.me();
+        if (!['admin', 'cocina'].includes(me.admin?.role)) {
+          navigate(homeForRole(me.admin?.role), { replace: true });
+          return;
+        }
+        if (!cancelled) setReady(true);
+      } catch {
+        clearStaffSession();
+        navigate('/cocina', { replace: true });
+      }
+    }
+
+    init();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+
     load();
 
     const es = new EventSource(api.kitchenStreamUrl());
@@ -84,7 +113,7 @@ export default function KitchenPage() {
       es.close();
       clearInterval(poll);
     };
-  }, [load]);
+  }, [load, ready]);
 
   async function openDetail(orderId) {
     try {
@@ -96,13 +125,16 @@ export default function KitchenPage() {
     }
   }
 
-// añadido recien
   async function markPreparing() {
-    if (!selected || selected.status !== 'pendiente') return;
+    if (!selected || !['pendiente', 'listo'].includes(selected.status)) return;
     try {
       const detail = await api.updateKitchenOrderStatus(selected.id, 'en_preparacion');
       setSelected(detail);
-      setFlash(`Pedido #${selected.id} en preparación`);
+      setFlash(
+        selected.status === 'listo'
+          ? `Pedido #${selected.id} vuelto a preparación`
+          : `Pedido #${selected.id} en preparación`
+      );
       window.setTimeout(() => setFlash(''), 4000);
       await load();
     } catch (err) {
@@ -123,6 +155,19 @@ export default function KitchenPage() {
     }
   }
 
+  function logout() {
+    clearStaffSession();
+    navigate('/cocina');
+  }
+
+  if (!ready) {
+    return (
+      <section className="center-card">
+        <p className="muted">Verificando sesión de cocina…</p>
+      </section>
+    );
+  }
+
   return (
     <section className="kitchen">
       <div className="kitchen-header">
@@ -130,14 +175,17 @@ export default function KitchenPage() {
           <p className="eyebrow">Gestión de cocina</p>
           <h1>Lista de pedidos</h1>
           <p className="muted">
-            {live
-              ? 'Pedidos para cocina'
-              : 'Reconectando… (respaldo cada 15 s)'}
+            {live ? 'Pedidos para cocina' : 'Reconectando… (respaldo cada 15 s)'}
           </p>
         </div>
-        <button type="button" className="btn" onClick={load}>
-          Refrescar
-        </button>
+        <div className="admin-actions">
+          <button type="button" className="btn" onClick={load}>
+            Refrescar
+          </button>
+          <button type="button" className="btn" onClick={logout}>
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert">{error}</div>}
@@ -198,21 +246,18 @@ export default function KitchenPage() {
               </ul>
               {selected.notes && <p>Observación general: {selected.notes}</p>}
               {selected.status === 'pendiente' && (
-                <button
-                  type="button"
-                  className="btn small"
-                  onClick={markPreparing}
-                >
+                <button type="button" className="btn small" onClick={markPreparing}>
                   Marcar como en preparación
                 </button>
               )}
               {selected.status === 'en_preparacion' && (
-                <button
-                  type="button"
-                  className="btn small"
-                  onClick={markReady}
-                >
+                <button type="button" className="btn small" onClick={markReady}>
                   Marcar como listo
+                </button>
+              )}
+              {selected.status === 'listo' && (
+                <button type="button" className="btn small" onClick={markPreparing}>
+                  Volver a preparación
                 </button>
               )}
               <p className="total-row">

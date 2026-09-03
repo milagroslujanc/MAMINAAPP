@@ -22,7 +22,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const [rows] = await pool.query(
       `SELECT p.id, p.category_id, p.name, p.description, p.price, p.image_url,
-              p.stock, p.is_active, c.name AS category_name
+              p.is_active, c.name AS category_name
        FROM products p
        JOIN categories c ON c.id = p.category_id
        ORDER BY c.sort_order, p.name`
@@ -31,9 +31,7 @@ router.get(
       rows.map((p) => ({
         ...p,
         price: Number(p.price),
-        stock: Number(p.stock),
         is_active: Boolean(p.is_active),
-        agotado: Number(p.stock) <= 0,
       }))
     );
   })
@@ -42,7 +40,7 @@ router.get(
 router.post(
   '/products',
   asyncHandler(async (req, res) => {
-    const { categoryId, name, description, price, imageUrl, stock, isActive } = req.body || {};
+    const { categoryId, name, description, price, imageUrl, isActive } = req.body || {};
 
     if (!categoryId || !name || price === undefined || price === null || price === '') {
       return res.status(400).json({ message: 'Categoría, nombre y precio son obligatorios' });
@@ -60,21 +58,20 @@ router.post(
 
     const [result] = await pool.query(
       `INSERT INTO products (category_id, name, description, price, image_url, stock, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, 0, ?)`,
       [
         categoryId,
         String(name).trim(),
         description ? String(description).trim() : null,
         numericPrice,
         imageUrl ? String(imageUrl).trim() : null,
-        Math.max(0, Number(stock) || 0),
         isActive === false || isActive === 0 ? 0 : 1,
       ]
     );
 
     const [rows] = await pool.query(
       `SELECT p.id, p.category_id, p.name, p.description, p.price, p.image_url,
-              p.stock, p.is_active, c.name AS category_name
+              p.is_active, c.name AS category_name
        FROM products p
        JOIN categories c ON c.id = p.category_id
        WHERE p.id = ?`,
@@ -85,7 +82,6 @@ router.post(
     res.status(201).json({
       ...product,
       price: Number(product.price),
-      stock: Number(product.stock),
       is_active: Boolean(product.is_active),
       message: 'Plato agregado al menú',
     });
@@ -96,7 +92,7 @@ router.put(
   '/products/:id',
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const { categoryId, name, description, price, imageUrl, stock, isActive } = req.body || {};
+    const { categoryId, name, description, price, imageUrl, isActive } = req.body || {};
 
     const [existing] = await pool.query(`SELECT id FROM products WHERE id = ?`, [id]);
     if (!existing[0]) {
@@ -114,8 +110,7 @@ router.put(
 
     await pool.query(
       `UPDATE products
-       SET category_id = ?, name = ?, description = ?, price = ?, image_url = ?,
-           stock = ?, is_active = ?
+       SET category_id = ?, name = ?, description = ?, price = ?, image_url = ?, is_active = ?
        WHERE id = ?`,
       [
         categoryId,
@@ -123,7 +118,6 @@ router.put(
         description ? String(description).trim() : null,
         numericPrice,
         imageUrl ? String(imageUrl).trim() : null,
-        Math.max(0, Number(stock) || 0),
         isActive === false || isActive === 0 ? 0 : 1,
         id,
       ]
@@ -131,7 +125,7 @@ router.put(
 
     const [rows] = await pool.query(
       `SELECT p.id, p.category_id, p.name, p.description, p.price, p.image_url,
-              p.stock, p.is_active, c.name AS category_name
+              p.is_active, c.name AS category_name
        FROM products p
        JOIN categories c ON c.id = p.category_id
        WHERE p.id = ?`,
@@ -142,7 +136,6 @@ router.put(
     res.json({
       ...product,
       price: Number(product.price),
-      stock: Number(product.stock),
       is_active: Boolean(product.is_active),
       message: 'Plato actualizado',
     });
