@@ -504,8 +504,20 @@ router.post(
         );
       }
 
+      const [pendingAlerts] = await conn.query(
+        `SELECT id FROM service_requests WHERE order_id = ? AND status = 'pendiente'`,
+        [orderId]
+      );
+      await conn.query(
+        `UPDATE service_requests
+         SET status = 'atendida', attended_at = NOW(), attended_by = ?
+         WHERE order_id = ? AND status = 'pendiente'`,
+        [req.staff?.id || null, orderId]
+      );
+
       await conn.commit();
       bus.emit('order:updated', { id: orderId });
+      pendingAlerts.forEach((alert) => bus.emit('alert:attended', { id: alert.id }));
 
       res.json({
         id: orderId,

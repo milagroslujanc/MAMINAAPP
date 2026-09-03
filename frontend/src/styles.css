@@ -642,12 +642,6 @@ h1 {
   gap: 0.35rem;
   transition: transform 0.15s ease;
   box-shadow: 0 2px 10px rgba(34, 34, 34, 0.04);
-  font-size: 200%;
-}
-
-.order-card p,
-.order-card strong {
-  font-size: inherit;
 }
 
 .status-pill {
@@ -682,6 +676,21 @@ h1 {
   border-bottom: 1px solid var(--line);
   padding-bottom: 0.75rem;
   margin-bottom: 0.75rem;
+}
+
+.precuenta-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.precuenta-thanks {
+  margin: 1rem 0 0;
+  text-align: center;
+  color: var(--rojo);
+  font-weight: 600;
 }
 
 .order-card:hover {
@@ -1123,7 +1132,55 @@ h1 {
 }
 
 .orders-table .row-selected {
-  background: rgba(144, 16, 32, 0.06);
+  box-shadow: inset 3px 0 0 var(--rojo);
+}
+
+.status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.status-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.status-legend-swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  display: inline-block;
+}
+
+.orders-table tbody tr.status-row--pendiente {
+  background: #f8e3b8;
+}
+
+.orders-table tbody tr.status-row--en_preparacion {
+  background: #cfe3f8;
+}
+
+.orders-table tbody tr.status-row--listo {
+  background: #cde9d4;
+}
+
+.status-legend-swatch.status-row--pendiente {
+  background: #f8e3b8;
+}
+
+.status-legend-swatch.status-row--en_preparacion {
+  background: #cfe3f8;
+}
+
+.status-legend-swatch.status-row--listo {
+  background: #cde9d4;
 }
 
 .orders-table {

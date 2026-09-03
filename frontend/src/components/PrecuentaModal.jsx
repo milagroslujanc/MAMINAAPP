@@ -12,6 +12,8 @@ function money(value) {
   return `S/ ${Number(value).toFixed(2)}`;
 }
 
+const THANKS_MESSAGE = 'Gracias por su visita. ¡Esperamos que vuelva pronto!';
+
 /**
  * Precuenta: cabecera + detalle de ítems, con impresión a PDF.
  */
@@ -21,6 +23,7 @@ export default function PrecuentaModal({ open, order, onClose }) {
   const destination =
     order.order_type === 'llevar' ? 'Para llevar' : `Mesa ${order.table_number ?? '—'}`;
   const items = Array.isArray(order.items) ? order.items : [];
+  const logoSrc = `${window.location.origin}/mamina.png`;
 
   function printPdf() {
     const rows = items
@@ -43,17 +46,23 @@ export default function PrecuentaModal({ open, order, onClose }) {
         th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}
         th{background:#f3f3f3}
         .total{margin-top:16px;font-size:16px;text-align:right}
-        header{border-bottom:2px solid #901020;padding-bottom:10px;margin-bottom:16px}
+        header{border-bottom:2px solid #901020;padding-bottom:10px;margin-bottom:16px;display:flex;gap:16px;align-items:center}
+        header img{width:72px;height:72px;object-fit:contain}
+        .thanks{margin-top:28px;text-align:center;font-size:14px;color:#901020}
       </style></head><body>
       <header>
-        <h1>La Mamina · Precuenta</h1>
-        <p class="muted">Pedido #${order.id} · ${destination} · ${formatDateTime(order.created_at)}</p>
+        <img src="${logoSrc}" alt="La Mamina">
+        <div>
+          <h1>La Mamina · Precuenta</h1>
+          <p class="muted">Pedido #${order.id} · ${destination} · ${formatDateTime(order.created_at)}</p>
+        </div>
       </header>
       <table>
         <thead><tr><th>Producto</th><th>Nota</th><th>P. unit.</th><th>Subtotal</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="4">Sin ítems</td></tr>'}</tbody>
       </table>
       <p class="total"><strong>Total a pagar: ${money(order.total)}</strong></p>
+      <p class="thanks">${THANKS_MESSAGE}</p>
       <script>window.onload=()=>{window.print()}</script>
       </body></html>`;
     const win = window.open('', '_blank');
@@ -71,6 +80,7 @@ export default function PrecuentaModal({ open, order, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="precuenta-header">
+          <img src="/mamina.png" alt="La Mamina" className="precuenta-logo" />
           <p className="eyebrow">Precuenta</p>
           <h2>La Mamina</h2>
           <p>
@@ -97,6 +107,7 @@ export default function PrecuentaModal({ open, order, onClose }) {
           <span>Total a pagar</span>
           <strong>{money(order.total)}</strong>
         </p>
+        <p className="precuenta-thanks">{THANKS_MESSAGE}</p>
         <div className="modal-actions">
           <button type="button" className="btn" onClick={onClose}>
             Cerrar
