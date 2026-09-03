@@ -1186,7 +1186,10 @@ h1 {
 .orders-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+}
+
+.staff-orders .orders-table {
+  min-width: 0;
 }
 
 .orders-table th,
@@ -1195,6 +1198,11 @@ h1 {
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
+}
+
+.staff-orders .orders-table th,
+.staff-orders .orders-table td {
+  padding: 0.85rem 0;
 }
 
 .orders-table th {
