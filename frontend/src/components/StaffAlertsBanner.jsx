@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import ConfirmModal from './ConfirmModal';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('es-PE', {
@@ -15,6 +16,8 @@ function formatTime(iso) {
 export default function StaffAlertsBanner({ pedidosPath = '/mesero/pedidos' }) {
   const [alerts, setAlerts] = useState([]);
   const [error, setError] = useState('');
+  const [confirmAlert, setConfirmAlert] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -59,16 +62,23 @@ export default function StaffAlertsBanner({ pedidosPath = '/mesero/pedidos' }) {
     };
   }, [load]);
 
-  async function attend(id) {
+  async function finishAlertOrder() {
+    if (!confirmAlert?.order_id) return;
+    const alert = confirmAlert;
+    setConfirmAlert(null);
+    setSaving(true);
+    setError('');
     try {
-      await api.attendStaffAlert(id);
-      setAlerts((prev) => prev.filter((a) => a.id !== id));
+      await api.closeAdminOrderSession(alert.order_id);
+      setAlerts((prev) => prev.filter((a) => a.id !== alert.id && a.order_id !== alert.order_id));
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
-  if (!alerts.length && !error) return null;
+  if (!alerts.length && !error && !confirmAlert) return null;
 
   return (
     <div className="staff-alerts" role="status">
@@ -92,12 +102,25 @@ export default function StaffAlertsBanner({ pedidosPath = '/mesero/pedidos' }) {
             <Link className="btn small" to={pedidosPath}>
               Ir a pedidos
             </Link>
-            <button type="button" className="btn small primary" onClick={() => attend(alert.id)}>
-              Atendida
+            <button
+              type="button"
+              className="btn small primary"
+              disabled={saving}
+              onClick={() => setConfirmAlert(alert)}
+            >
+              Finalizar atención
             </button>
           </div>
         </div>
       ))}
+      <ConfirmModal
+        open={Boolean(confirmAlert)}
+        title="Finalizar atención"
+        message={`¿Terminar el pedido #${confirmAlert?.order_id}? Se marcará como entregado, se liberará la mesa (si aplica), se cerrará la sesión del cliente y pasará al historial.`}
+        confirmLabel="Finalizar atención"
+        onCancel={() => setConfirmAlert(null)}
+        onConfirm={finishAlertOrder}
+      />
     </div>
   );
 }

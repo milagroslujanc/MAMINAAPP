@@ -409,6 +409,17 @@ export default function StaffOrdersPage({ roleRequired }) {
       {error && <div className="alert">{error}</div>}
       {success && <div className="alert ok">{success}</div>}
 
+      {view === 'active' && (
+        <ul className="status-legend" aria-label="Leyenda de estados">
+          {['pendiente', 'en_preparacion', 'listo'].map((status) => (
+            <li key={status}>
+              <span className={`status-legend-swatch status-row--${status}`} />
+              {STATUS_LABELS[status]}
+            </li>
+          ))}
+        </ul>
+      )}
+
       <div className="orders-layout">
         <div className="orders-table-wrap">
           <table className="orders-table">
@@ -417,16 +428,16 @@ export default function StaffOrdersPage({ roleRequired }) {
                 <th>#</th>
                 <th>Hora</th>
                 <th>Mesa / Destino</th>
-                <th>Estado</th>
+                {view === 'history' && <th>Estado</th>}
                 <th>Total</th>
-                <th>Cobro</th>
+                {view === 'history' && <th>Cobro</th>}
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {!visibleOrders.length && (
                 <tr>
-                  <td colSpan={7} className="muted">
+                  <td colSpan={view === 'active' ? 5 : 7} className="muted">
                     {view === 'active'
                       ? 'No hay pedidos activos que requieran atención.'
                       : 'No hay pedidos en el historial aún.'}
@@ -438,7 +449,7 @@ export default function StaffOrdersPage({ roleRequired }) {
                   key={order.id}
                   className={`${order.status === 'cancelado' ? 'row-cancelled' : ''} ${
                     selected?.id === order.id ? 'row-selected' : ''
-                  }`}
+                  } ${view === 'active' ? `status-row--${order.status}` : ''}`}
                 >
                   <td>
                     <strong>{order.id}</strong>
@@ -449,11 +460,13 @@ export default function StaffOrdersPage({ roleRequired }) {
                       ? 'Para llevar'
                       : `Mesa ${order.table_number ?? '—'}`}
                   </td>
-                  <td className="status-cell">
-                    <StatusLabel status={order.status} />
-                  </td>
+                  {view === 'history' && (
+                    <td className="status-cell">
+                      <StatusLabel status={order.status} />
+                    </td>
+                  )}
                   <td>S/ {Number(order.total).toFixed(2)}</td>
-                  <td>{order.charged ? 'Sí' : 'No'}</td>
+                  {view === 'history' && <td>{order.charged ? 'Sí' : 'No'}</td>}
                   <td>
                     <div className="orders-actions">
                       {view === 'active' && (
