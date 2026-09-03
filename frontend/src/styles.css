@@ -1202,7 +1202,7 @@ h1 {
 
 .staff-orders .orders-table th,
 .staff-orders .orders-table td {
-  padding: 0.85rem 0;
+  padding: 0.85rem 1rem;
 }
 
 .orders-table th {
