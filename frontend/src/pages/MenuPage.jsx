@@ -346,7 +346,7 @@ async function loadActiveOrder() {
               ))}
             </div>
           </div>
-        ))
+        ))}
         </>
       ) : (
         <section className="order-status-panel">
