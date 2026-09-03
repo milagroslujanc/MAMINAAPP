@@ -1,7 +1,7 @@
 node_modules/
 dist/
 .env
-!.env.example
+.env.example
 *.log
 .DS_Store
 *.docx

@@ -115,23 +115,19 @@ export default function MenuPage() {
     setCart([]);
     setActiveOrder(null);
   }
-
-  async function loadActiveOrder() {
+//cambio
+async function loadActiveOrder() {
     if (!session?.sessionToken) return;
     try {
-      const order = await api.getActiveOrder(session.sessionToken);
-      setActiveOrder(order);
+      const data = await api.getActiveOrder(session.sessionToken);
+      setActiveOrder(data.hasActiveOrder ? data : null);
       setError('');
     } catch (err) {
       if (err.message === 'Sesión inválida' || err.message === 'Código QR inválido o expirado') {
         clearClientSession();
         return;
       }
-      if (err.message === 'Pedido no encontrado') {
-        setActiveOrder(null);
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     }
   }
 
@@ -251,9 +247,6 @@ export default function MenuPage() {
       <section className="center-card">
         <h1>Sin sesión de mesa</h1>
         <p>Escanea el QR para poder iniciar un pedido.</p>
-        <Link className="btn" to="/">
-          Ir a recepción
-        </Link>
       </section>
     );
   }
