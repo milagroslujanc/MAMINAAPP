@@ -49,6 +49,7 @@ export default function MenuPage() {
   const [requestingFinish, setRequestingFinish] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [showPrecuenta, setShowPrecuenta] = useState(false);
+  const [sessionClosed, setSessionClosed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +100,25 @@ export default function MenuPage() {
       loadActiveOrder();
     }
   }, [selectedTab, session?.sessionToken]);
+
+  useEffect(() => {
+    if (!session?.sessionToken) return undefined;
+
+    const stream = new EventSource(api.sessionStreamUrl(session.sessionToken));
+    stream.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'session_closed') {
+          setSessionClosed(true);
+          clearClientSession();
+        }
+      } catch {
+        // Ignore malformed keep-alive data.
+      }
+    };
+
+    return () => stream.close();
+  }, [session?.sessionToken]);
 
   useEffect(() => {
     sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -262,8 +282,12 @@ async function loadActiveOrder() {
   if (!session) {
     return (
       <section className="center-card">
-        <h1>Sin sesión de mesa</h1>
-        <p>Escanea el QR para poder iniciar un pedido.</p>
+        <h1>{sessionClosed ? 'Atención finalizada' : 'Sin sesión de mesa'}</h1>
+        <p>
+          {sessionClosed
+            ? 'El personal ha cerrado esta sesión. Gracias por visitarnos.'
+            : 'Escanea el QR para poder iniciar un pedido.'}
+        </p>
       </section>
     );
   }

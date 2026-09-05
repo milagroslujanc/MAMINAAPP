@@ -1,8 +1,41 @@
 const express = require('express');
 const pool = require('../config/db');
+const bus = require('../events');
 const { asyncHandler } = require('../utils');
 
 const router = express.Router();
+
+router.get('/:token/stream', (req, res) => {
+  const { token } = req.params;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  const send = (payload) => {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+
+  send({ type: 'connected' });
+
+  const onClosed = (payload) => {
+    if (payload.sessionToken === token) {
+      send({ type: 'session_closed' });
+    }
+  };
+
+  bus.on('session:closed', onClosed);
+
+  const heartbeat = setInterval(() => {
+    res.write(': ping\n\n');
+  }, 15000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    bus.off('session:closed', onClosed);
+  });
+});
 
 router.get(
   '/:token',

@@ -45,6 +45,8 @@ export const api = {
   takeaway: () => request('/api/tables/takeaway', { method: 'POST' }),
   releaseTable: (id) => request(`/api/tables/${id}/release`, { method: 'POST' }),
   resolveSession: (token) => request(`/api/sessions/${token}`),
+  sessionStreamUrl: (token) =>
+    `${API_BASE}/api/sessions/${encodeURIComponent(token)}/stream`,
   getMenu: () => request('/api/menu'),
   createOrder: (payload) =>
     request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }),
