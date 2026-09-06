@@ -173,7 +173,7 @@ export default function AdminStatsPage() {
           setLoading(false);
         }
       } catch (err) {
-        clearStaffSession();
+        clearStaffSession('admin');
         if (!cancelled) {
           setError(err.message || 'No se pudieron cargar las estadísticas');
           setLoading(false);

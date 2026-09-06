@@ -135,12 +135,8 @@ export default function StaffOrdersPage({ roleRequired }) {
         const data = await api.me();
         const role = data.admin?.role || 'admin';
 
-        if (roleRequired === 'admin' && role === 'mesero') {
-          navigate('/mesero/pedidos', { replace: true });
-          return;
-        }
-        if (roleRequired === 'mesero' && role !== 'mesero' && role !== 'admin') {
-          navigate('/mesero', { replace: true });
+        if (role !== roleRequired) {
+          navigate(roleRequired === 'mesero' ? '/mesero' : '/admin', { replace: true });
           return;
         }
 
@@ -150,7 +146,7 @@ export default function StaffOrdersPage({ roleRequired }) {
           setReady(true);
         }
       } catch {
-        clearStaffSession();
+        clearStaffSession(roleRequired);
         navigate(roleRequired === 'mesero' ? '/mesero' : '/admin', { replace: true });
       }
     }
@@ -171,7 +167,7 @@ export default function StaffOrdersPage({ roleRequired }) {
   }, [ready, loadProducts]);
 
   function logout() {
-    clearStaffSession();
+    clearStaffSession(staff?.role || roleRequired);
     navigate(staff?.role === 'mesero' ? '/mesero' : '/admin');
   }
 

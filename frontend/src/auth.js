@@ -1,8 +1,18 @@
-const STAFF_KEY = 'mamina_admin';
+const STAFF_KEYS = {
+  admin: 'admin_token',
+  cocina: 'cocina_token',
+  mesero: 'mesero_token',
+};
 
-export function getStaffSession() {
+function keyForRole(role) {
+  return STAFF_KEYS[role] || null;
+}
+
+export function getStaffSession(role) {
   try {
-    const raw = localStorage.getItem(STAFF_KEY);
+    const key = keyForRole(role);
+    if (!key) return null;
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -11,15 +21,19 @@ export function getStaffSession() {
 }
 
 export function setStaffSession(data) {
-  localStorage.setItem(STAFF_KEY, JSON.stringify(data));
+  const role = data?.admin?.role;
+  const key = keyForRole(role);
+  if (!key) return;
+  localStorage.setItem(key, JSON.stringify(data));
 }
 
-export function clearStaffSession() {
-  localStorage.removeItem(STAFF_KEY);
+export function clearStaffSession(role) {
+  const key = keyForRole(role);
+  if (key) localStorage.removeItem(key);
 }
 
 export function getStaffRole() {
-  return getStaffSession()?.admin?.role || null;
+  return Object.keys(STAFF_KEYS).find((role) => getStaffSession(role)) || null;
 }
 
 export function homeForRole(role) {

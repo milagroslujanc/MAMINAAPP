@@ -39,13 +39,13 @@ export default function KitchenPage() {
     async function init() {
       try {
         const me = await api.me();
-        if (!['admin', 'cocina'].includes(me.admin?.role)) {
-          navigate(homeForRole(me.admin?.role), { replace: true });
+        if (me.admin?.role !== 'cocina') {
+          navigate('/cocina', { replace: true });
           return;
         }
         if (!cancelled) setReady(true);
       } catch {
-        clearStaffSession();
+        clearStaffSession('cocina');
         navigate('/cocina', { replace: true });
       }
     }
@@ -156,7 +156,7 @@ export default function KitchenPage() {
   }
 
   function logout() {
-    clearStaffSession();
+    clearStaffSession('cocina');
     navigate('/cocina');
   }
 

@@ -40,7 +40,7 @@ export default function AdminTablesPage() {
         await load();
         if (!cancelled) setReady(true);
       } catch {
-        clearStaffSession();
+        clearStaffSession('admin');
         if (!cancelled) navigate('/admin', { replace: true });
       }
     }
