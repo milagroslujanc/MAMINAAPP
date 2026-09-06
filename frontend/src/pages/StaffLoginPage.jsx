@@ -26,7 +26,7 @@ export default function StaffLoginPage({ expectedRole }) {
     let cancelled = false;
 
     async function checkSession() {
-      const existing = getStaffSession();
+      const existing = getStaffSession(expectedRole);
       if (!existing?.token) {
         if (!cancelled) setChecking(false);
         return;
@@ -35,11 +35,16 @@ export default function StaffLoginPage({ expectedRole }) {
       try {
         const data = await api.me();
         const role = data.admin?.role;
+        if (role !== expectedRole) {
+          clearStaffSession(expectedRole);
+          if (!cancelled) setChecking(false);
+          return;
+        }
         if (!cancelled) {
-          navigate(homeForRole(role), { replace: true });
+          navigate(homeForRole(expectedRole), { replace: true });
         }
       } catch {
-        clearStaffSession();
+        clearStaffSession(expectedRole);
         if (!cancelled) setChecking(false);
       }
     }
@@ -59,32 +64,13 @@ export default function StaffLoginPage({ expectedRole }) {
       const role = data.admin?.role;
       setStaffSession(data);
 
-      if (expectedRole === 'admin' && role === 'mesero') {
-        navigate('/mesero/mesas', { replace: true });
-        return;
-      }
-      if (expectedRole === 'admin' && role === 'cocina') {
-        navigate('/cocina/pedidos', { replace: true });
-        return;
-      }
-      if (expectedRole === 'mesero' && role === 'admin') {
-        navigate('/admin/panel', { replace: true });
-        return;
-      }
-      if (expectedRole === 'mesero' && role === 'cocina') {
-        navigate('/cocina/pedidos', { replace: true });
-        return;
-      }
-      if (expectedRole === 'cocina' && role === 'admin') {
-        navigate('/admin/panel', { replace: true });
-        return;
-      }
-      if (expectedRole === 'cocina' && role === 'mesero') {
-        navigate('/mesero/mesas', { replace: true });
+      if (role !== expectedRole) {
+        setError(`Esta cuenta no tiene acceso al login de ${expectedRole}.`);
+        clearStaffSession(role);
         return;
       }
 
-      navigate(homeForRole(role), { replace: true });
+      navigate(homeForRole(expectedRole), { replace: true });
     } catch (err) {
       setError(err.message || 'Datos incorrectos');
     } finally {

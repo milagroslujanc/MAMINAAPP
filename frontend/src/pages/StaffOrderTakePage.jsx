@@ -73,8 +73,9 @@ export default function StaffOrderTakePage() {
         setReady(true);
       } catch (err) {
         if (err.message === 'No autorizado' || err.message === 'Sesión inválida o expirada') {
-          clearStaffSession();
-          navigate('/mesero', { replace: true });
+          const role = window.location.pathname.startsWith('/admin') ? 'admin' : 'mesero';
+          clearStaffSession(role);
+          navigate(role === 'admin' ? '/admin' : '/mesero', { replace: true });
           return;
         }
         if (!cancelled) {
