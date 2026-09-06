@@ -46,6 +46,7 @@ export default function MenuPage() {
   const [success, setSuccess] = useState('');
   const [sending, setSending] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [confirmOrder, setConfirmOrder] = useState(false);
   const [requestingFinish, setRequestingFinish] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [showPrecuenta, setShowPrecuenta] = useState(false);
@@ -271,6 +272,11 @@ async function loadActiveOrder() {
     }
   }
 
+  function confirmSendOrder() {
+    setConfirmOrder(false);
+    sendOrder();
+  }
+
   if (!sessionChecked) {
     return (
       <section className="center-card">
@@ -470,14 +476,22 @@ async function loadActiveOrder() {
               type="button"
               className="btn primary large"
               disabled={!cart.length || sending || activeOrder?.finish_requested}
-              onClick={sendOrder}
+              onClick={() => setConfirmOrder(true)}
             >
-              {sending ? 'Enviando…' : 'Enviar a cocina'}
+              {sending ? 'Enviando…' : 'Confirmar pedido'}
             </button>
           </div>
         </aside>
       )}
 
+      <ConfirmModal
+        open={confirmOrder}
+        title="Confirmar pedido"
+        message="¿Confirmas que deseas enviar este pedido a cocina?"
+        confirmLabel="Confirmar"
+        onCancel={() => setConfirmOrder(false)}
+        onConfirm={confirmSendOrder}
+      />
       <ConfirmModal
         open={confirmFinish}
         title="Confirmar solicitud"

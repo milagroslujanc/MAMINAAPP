@@ -91,7 +91,7 @@ export default function EntrancePage() {
   return (
     <section className="entrance">
       <div className="entrance-hero">
-        <p className="eyebrow">Pantalla de recepción · Sprint 1</p>
+        <p className="eyebrow">Pantalla de recepción </p>
         <h1>Elige tu mesa</h1>
         <p className="lede">
           Selecciona una mesa libre o pide para llevar. Al confirmar, el sistema genera un código
@@ -131,7 +131,7 @@ export default function EntrancePage() {
         >
           Pedir para llevar
         </button>
-        <p className="hint">Clic derecho en una mesa ocupada la libera (demo recepción).</p>
+        <p className="hint">Clic derecho en una mesa ocupada la libera</p>
       </div>
 
       {pendingTable && (
