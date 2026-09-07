@@ -23,7 +23,7 @@ export default function AdminHomePage() {
           setChecking(false);
         }
       } catch {
-        clearStaffSession();
+        clearStaffSession('admin');
         if (!cancelled) navigate('/admin', { replace: true });
       }
     }
@@ -35,7 +35,7 @@ export default function AdminHomePage() {
   }, [navigate]);
 
   function logout() {
-    clearStaffSession();
+    clearStaffSession('admin');
     navigate('/admin');
   }
 

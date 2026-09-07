@@ -1,13 +1,32 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+function currentStaffRole() {
+  const path = window.location.pathname;
+  if (path.startsWith('/cocina')) return 'cocina';
+  if (path.startsWith('/mesero')) return 'mesero';
+  if (path.startsWith('/admin')) return 'admin';
+  return null;
+}
+
 function authHeaders() {
   try {
-    const raw = localStorage.getItem('mamina_admin');
+    const role = currentStaffRole();
+    const raw = role ? localStorage.getItem(`${role}_token`) : null;
     if (!raw) return {};
     const { token } = JSON.parse(raw);
     return token ? { Authorization: `Bearer ${token}` } : {};
   } catch {
     return {};
+  }
+}
+
+function currentStaffToken() {
+  const role = currentStaffRole();
+  if (!role) return '';
+  try {
+    return JSON.parse(localStorage.getItem(`${role}_token`) || 'null')?.token || '';
+  } catch {
+    return '';
   }
 }
 
@@ -45,6 +64,8 @@ export const api = {
   takeaway: () => request('/api/tables/takeaway', { method: 'POST' }),
   releaseTable: (id) => request(`/api/tables/${id}/release`, { method: 'POST' }),
   resolveSession: (token) => request(`/api/sessions/${token}`),
+  sessionStreamUrl: (token) =>
+    `${API_BASE}/api/sessions/${encodeURIComponent(token)}/stream`,
   getMenu: () => request('/api/menu'),
   createOrder: (payload) =>
     request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }),
@@ -59,13 +80,8 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
   kitchenStreamUrl: () => {
-    try {
-      const raw = localStorage.getItem('mamina_admin');
-      const token = raw ? JSON.parse(raw)?.token : '';
-      return `${API_BASE}/api/kitchen/stream?token=${encodeURIComponent(token || '')}`;
-    } catch {
-      return `${API_BASE}/api/kitchen/stream`;
-    }
+    const token = currentStaffToken();
+    return `${API_BASE}/api/kitchen/stream?token=${encodeURIComponent(token)}`;
   },
   login: (username, password) =>
     request('/api/auth/login', {
@@ -135,12 +151,7 @@ export const api = {
   attendStaffAlert: (id) =>
     request(`/api/admin/alerts/${id}/attend`, { method: 'POST' }),
   staffAlertsStreamUrl: () => {
-    try {
-      const raw = localStorage.getItem('mamina_admin');
-      const token = raw ? JSON.parse(raw)?.token : '';
-      return `${API_BASE}/api/admin/alerts/stream?token=${encodeURIComponent(token || '')}`;
-    } catch {
-      return `${API_BASE}/api/admin/alerts/stream`;
-    }
+    const token = currentStaffToken();
+    return `${API_BASE}/api/admin/alerts/stream?token=${encodeURIComponent(token)}`;
   },
 };

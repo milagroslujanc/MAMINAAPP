@@ -484,7 +484,7 @@ router.post(
       }
 
       const [sessions] = await conn.query(
-        `SELECT id, table_id, status FROM sessions WHERE id = ? FOR UPDATE`,
+        `SELECT id, table_id, status, token FROM sessions WHERE id = ? FOR UPDATE`,
         [order.session_id]
       );
       const session = sessions[0];
@@ -517,6 +517,9 @@ router.post(
 
       await conn.commit();
       bus.emit('order:updated', { id: orderId });
+      if (session?.status === 'activa' && session.token) {
+        bus.emit('session:closed', { sessionToken: session.token });
+      }
       pendingAlerts.forEach((alert) => bus.emit('alert:attended', { id: alert.id }));
 
       res.json({
