@@ -1,4 +1,5 @@
-import { Routes, Route, NavLink } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import EntrancePage from './pages/EntrancePage.jsx';
 import SessionBridgePage from './pages/SessionBridgePage.jsx';
 import MenuPage from './pages/MenuPage.jsx';
@@ -11,10 +12,49 @@ import AdminTablesPage from './pages/AdminTablesPage.jsx';
 import StaffOrdersPage from './pages/StaffOrdersPage.jsx';
 import StaffFloorPage from './pages/StaffFloorPage.jsx';
 import StaffOrderTakePage from './pages/StaffOrderTakePage.jsx';
+import { clearStaffSession, getStaffSession } from './auth';
+import { api } from './api';
+
+function StaffAccessGuard() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = location.pathname.startsWith('/cocina')
+      ? 'cocina'
+      : location.pathname.startsWith('/mesero')
+        ? 'mesero'
+        : null;
+    const session = role ? getStaffSession(role) : null;
+    if (!role || !session?.token) return undefined;
+
+    const stream = new EventSource(api.staffAccessStreamUrl());
+    stream.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'access_closed') {
+          clearStaffSession(role);
+          stream.close();
+          navigate(`/${role}`, {
+            replace: true,
+            state: { message: 'Acceso no disponible' },
+          });
+        }
+      } catch {
+        // Ignore malformed keep-alive data.
+      }
+    };
+
+    return () => stream.close();
+  }, [location.pathname, navigate]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <div className="app-shell">
+      <StaffAccessGuard />
       <header className="topbar">
         <NavLink to="/" className="brand" end>
           <img src="/mamina.png" alt="La Mamina" className="brand-logo" width="40" height="40" />

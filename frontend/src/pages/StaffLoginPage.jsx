@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import {
   clearStaffSession,
@@ -14,11 +14,12 @@ import {
  */
 export default function StaffLoginPage({ expectedRole }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const defaultUser =
     expectedRole === 'mesero' ? 'mesero' : expectedRole === 'cocina' ? 'cocina' : 'admin';
   const [username, setUsername] = useState(defaultUser);
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(location.state?.message || '');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 

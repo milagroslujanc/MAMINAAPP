@@ -154,4 +154,14 @@ export const api = {
     const token = currentStaffToken();
     return `${API_BASE}/api/admin/alerts/stream?token=${encodeURIComponent(token)}`;
   },
+  getStaffAccess: () => request('/api/admin/staff-access'),
+  setStaffAccess: (role, isOpen) =>
+    request(`/api/admin/staff-access/${role}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isOpen }),
+    }),
+  staffAccessStreamUrl: () => {
+    const token = currentStaffToken();
+    return `${API_BASE}/api/auth/staff-access/stream?token=${encodeURIComponent(token)}`;
+  },
 };

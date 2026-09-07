@@ -30,6 +30,18 @@ async function ensureMigrations() {
       console.log('Migración: tabla service_requests creada.');
     }
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS staff_access (
+        role ENUM('cocina', 'mesero') PRIMARY KEY,
+        is_open TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query(
+      `INSERT INTO staff_access (role, is_open) VALUES ('cocina', 1), ('mesero', 1)
+       ON DUPLICATE KEY UPDATE role = VALUES(role)`
+    );
+
     const [roleCols] = await pool.query(
       `SELECT COLUMN_TYPE FROM information_schema.columns
        WHERE table_schema = ? AND table_name = 'admins' AND column_name = 'role'`,

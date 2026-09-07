@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS tables;
 DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS staff_access;
 
 CREATE TABLE admins (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -18,6 +19,14 @@ CREATE TABLE admins (
   role ENUM('admin', 'mesero') NOT NULL DEFAULT 'admin',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE staff_access (
+  role ENUM('cocina', 'mesero') PRIMARY KEY,
+  is_open TINYINT(1) NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO staff_access (role, is_open) VALUES ('cocina', 1), ('mesero', 1);
 
 CREATE TABLE tables (
   id INT AUTO_INCREMENT PRIMARY KEY,
