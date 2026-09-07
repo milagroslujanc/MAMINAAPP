@@ -7,6 +7,9 @@ export default function AdminHomePage() {
   const navigate = useNavigate();
   const [admin, setAdmin] = useState(null);
   const [checking, setChecking] = useState(true);
+  const [staffAccess, setStaffAccess] = useState({});
+  const [accessError, setAccessError] = useState('');
+  const [savingRole, setSavingRole] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,6 +23,8 @@ export default function AdminHomePage() {
         }
         if (!cancelled) {
           setAdmin(data.admin);
+          const access = await api.getStaffAccess();
+          if (!cancelled) setStaffAccess(access);
           setChecking(false);
         }
       } catch {
@@ -39,6 +44,20 @@ export default function AdminHomePage() {
     navigate('/admin');
   }
 
+  async function toggleAccess(role) {
+    const isOpen = !staffAccess[role]?.isOpen;
+    setSavingRole(role);
+    setAccessError('');
+    try {
+      const result = await api.setStaffAccess(role, isOpen);
+      setStaffAccess((prev) => ({ ...prev, [role]: result }));
+    } catch (err) {
+      setAccessError(err.message);
+    } finally {
+      setSavingRole(null);
+    }
+  }
+
   if (checking || !admin) {
     return (
       <section className="center-card">
@@ -54,6 +73,30 @@ export default function AdminHomePage() {
       <p className="muted">
         Acceso total: menú, mesas y pedidos de clientes.
       </p>
+      <div className="staff-access-panel">
+        <div>
+          <p className="eyebrow">Disponibilidad de personal</p>
+          <p className="muted">Cierra el acceso para desconectar las sesiones activas de ese rol.</p>
+        </div>
+        <div className="staff-access-actions">
+          {['cocina', 'mesero'].map((role) => {
+            const isOpen = staffAccess[role]?.isOpen !== false;
+            return (
+              <button
+                key={role}
+                type="button"
+                className={`btn ${isOpen ? 'primary' : ''}`}
+                aria-pressed={isOpen}
+                disabled={savingRole === role}
+                onClick={() => toggleAccess(role)}
+              >
+                {role === 'cocina' ? 'Cocina' : 'Mesero'}: {isOpen ? 'Abierto' : 'Cerrado'}
+              </button>
+            );
+          })}
+        </div>
+        {accessError && <div className="alert">{accessError}</div>}
+      </div>
       <div className="admin-actions">
         <Link className="btn" to="/admin/estadisticas">
           Ver estadísticas

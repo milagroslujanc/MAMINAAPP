@@ -12,6 +12,7 @@ const adminMenuRoutes = require('./routes/adminMenu');
 const adminTablesRoutes = require('./routes/adminTables');
 const adminOrdersRoutes = require('./routes/adminOrders');
 const staffOpsRoutes = require('./routes/staffOps');
+const adminAccessRoutes = require('./routes/adminAccess');
 const { ensureMigrations } = require('./migrate');
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/kitchen', kitchenRoutes);
 app.use('/api/admin', staffOpsRoutes);
+app.use('/api/admin', adminAccessRoutes);
 app.use('/api/admin', adminOrdersRoutes);
 app.use('/api/admin', adminMenuRoutes);
 app.use('/api/admin', adminTablesRoutes);

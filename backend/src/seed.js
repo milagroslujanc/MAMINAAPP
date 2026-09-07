@@ -109,6 +109,18 @@ async function seed() {
         console.log('Migración: tabla service_requests creada.');
       }
 
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS staff_access (
+          role ENUM('cocina', 'mesero') PRIMARY KEY,
+          is_open TINYINT(1) NOT NULL DEFAULT 1,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      await connection.query(
+        `INSERT INTO staff_access (role, is_open) VALUES ('cocina', 1), ('mesero', 1)
+         ON DUPLICATE KEY UPDATE role = VALUES(role)`
+      );
+
       console.log('Base de datos ya inicializada — se omite el seed.');
       await connection.end();
       return;
@@ -123,6 +135,7 @@ async function seed() {
     DROP TABLE IF EXISTS products;
     DROP TABLE IF EXISTS categories;
     DROP TABLE IF EXISTS \`tables\`;
+    DROP TABLE IF EXISTS staff_access;
     DROP TABLE IF EXISTS admins;
 
     CREATE TABLE admins (
@@ -133,6 +146,14 @@ async function seed() {
       role ENUM('admin', 'mesero', 'cocina') NOT NULL DEFAULT 'admin',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE staff_access (
+      role ENUM('cocina', 'mesero') PRIMARY KEY,
+      is_open TINYINT(1) NOT NULL DEFAULT 1,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+
+    INSERT INTO staff_access (role, is_open) VALUES ('cocina', 1), ('mesero', 1);
 
     CREATE TABLE \`tables\` (
       id INT AUTO_INCREMENT PRIMARY KEY,
