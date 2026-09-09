@@ -193,12 +193,6 @@ export default function AdminMenuPage() {
           </p>
         </div>
         <div className="admin-actions">
-          <Link className="btn" to="/admin/panel">
-            Volver al panel
-          </Link>
-          <Link className="btn" to="/menu">
-            Ver menú cliente
-          </Link>
         </div>
       </div>
 

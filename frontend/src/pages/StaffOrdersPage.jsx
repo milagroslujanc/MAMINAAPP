@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import ConfirmModal from '../components/ConfirmModal';
 import StaffAlertsBanner from '../components/StaffAlertsBanner';
@@ -72,6 +72,7 @@ function IconTrash() {
  * Acceso: administrador y mesero.
  */
 export default function StaffOrdersPage({ roleRequired }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [staff, setStaff] = useState(null);
@@ -348,7 +349,8 @@ export default function StaffOrdersPage({ roleRequired }) {
     (order) => order.status === 'entregado' || order.status === 'cancelado'
   );
   const visibleOrders = view === 'active' ? activeOrders : historyOrders;
-  const panelLink = staff?.role === 'admin' ? '/admin/panel' : null;
+  const inAdminPanel = location.pathname.startsWith('/admin/panel');
+  const panelLink = staff?.role === 'admin' && !inAdminPanel ? '/admin/panel' : null;
   const salonPath = staff?.role === 'admin' ? '/admin/salon' : '/mesero/mesas';
   const pedidosPath = staff?.role === 'admin' ? '/admin/pedidos' : '/mesero/pedidos';
   const canEdit = editable(selected);
@@ -371,15 +373,19 @@ export default function StaffOrdersPage({ roleRequired }) {
               Volver al panel
             </Link>
           )}
-          <Link className="btn" to={salonPath}>
-            Salón
-          </Link>
+          {!inAdminPanel && (
+            <Link className="btn" to={salonPath}>
+              Salón
+            </Link>
+          )}
           <button type="button" className="btn" onClick={load}>
             Refrescar
           </button>
-          <button type="button" className="btn" onClick={logout}>
-            Cerrar sesión
-          </button>
+          {!inAdminPanel && (
+            <button type="button" className="btn" onClick={logout}>
+              Cerrar sesión
+            </button>
+          )}
         </div>
       </div>
 

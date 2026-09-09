@@ -84,7 +84,46 @@ router.get(
          COALESCE(SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND status = 'entregado' THEN total END), 0) AS yearlyRevenue,
          COALESCE(COUNT(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND status = 'entregado' THEN 1 END), 0) AS yearlyCompleted,
          COALESCE(COUNT(DISTINCT CASE WHEN YEAR(created_at) = YEAR(CURDATE()) THEN session_id END), 0) AS yearlyClients
+         ,COALESCE(SUM(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND status = 'entregado' THEN total END), 0) AS yesterdayRevenue
+         ,COALESCE(COUNT(CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND status = 'entregado' THEN 1 END), 0) AS yesterdayCompleted
+         ,COALESCE(COUNT(DISTINCT CASE WHEN DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN session_id END), 0) AS yesterdayClients
        FROM orders`
+    );
+
+    const [last7Days] = await pool.query(
+      `SELECT DATE(created_at) AS date, COALESCE(SUM(total), 0) AS total, COUNT(*) AS completed
+       FROM orders
+       WHERE status = 'entregado'
+         AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE()
+       GROUP BY DATE(created_at)
+       ORDER BY date`
+    );
+
+    const [previous7Days] = await pool.query(
+      `SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS completed
+       FROM orders
+       WHERE status = 'entregado'
+         AND DATE(created_at) BETWEEN DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+           AND DATE_SUB(CURDATE(), INTERVAL 7 DAY)`
+    );
+
+    const [currentMonthByWeek] = await pool.query(
+      `SELECT FLOOR((DAY(created_at) - 1) / 7) + 1 AS week,
+              COALESCE(SUM(total), 0) AS total
+       FROM orders
+       WHERE status = 'entregado'
+         AND YEAR(created_at) = YEAR(CURDATE())
+         AND MONTH(created_at) = MONTH(CURDATE())
+       GROUP BY FLOOR((DAY(created_at) - 1) / 7) + 1
+       ORDER BY week`
+    );
+
+    const [previousMonthTotals] = await pool.query(
+      `SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS completed
+       FROM orders
+       WHERE status = 'entregado'
+         AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+         AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))`
     );
 
     const [currentMonth] = await pool.query(
@@ -124,6 +163,37 @@ router.get(
         completedOrders: Number(row.yearlyCompleted),
         clients: Number(row.yearlyClients),
       },
+      yesterday: {
+        revenue: Number(row.yesterdayRevenue),
+        completedOrders: Number(row.yesterdayCompleted),
+        clients: Number(row.yesterdayClients),
+      },
+      salesLast7Days: last7Days.map((d) => ({
+        date: d.date,
+        total: Number(d.total),
+      })),
+      periods: {
+        last7Days: {
+          totalSales: last7Days.reduce((sum, day) => sum + Number(day.total), 0),
+          completedOrders: last7Days.reduce((sum, day) => sum + Number(day.completed), 0),
+        },
+        previous7Days: {
+          totalSales: Number(previous7Days[0]?.total || 0),
+          completedOrders: Number(previous7Days[0]?.completed || 0),
+        },
+        currentMonth: {
+          totalSales: Number(row.monthlyRevenue),
+          completedOrders: Number(row.monthlyCompleted),
+        },
+        previousMonth: {
+          totalSales: Number(previousMonthTotals[0]?.total || 0),
+          completedOrders: Number(previousMonthTotals[0]?.completed || 0),
+        },
+      },
+      salesCurrentMonthByWeek: currentMonthByWeek.map((d) => ({
+        week: Number(d.week),
+        total: Number(d.total),
+      })),
       salesHistogram: {
         currentMonth: currentMonth.map((d) => ({ day: Number(d.day), total: Number(d.total) })),
         previousMonth: previousMonth.map((d) => ({ day: Number(d.day), total: Number(d.total) })),

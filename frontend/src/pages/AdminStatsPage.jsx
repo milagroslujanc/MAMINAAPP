@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { clearStaffSession, homeForRole } from '../auth';
 
 function formatMoney(value) {
+  const amount = Number(value);
   return new Intl.NumberFormat('es-PE', {
     style: 'currency',
     currency: 'PEN',
     maximumFractionDigits: 2,
-  }).format(value);
+  }).format(Number.isFinite(amount) ? amount : 0);
 }
 
 function formatDateTime(iso) {
@@ -28,7 +29,59 @@ function toInputDate(date) {
   return `${y}-${m}-${d}`;
 }
 
-function StatCard({ title, value, subtitle, active, onClick }) {
+function safeNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getTrend(current, previous) {
+  const currentValue = safeNumber(current);
+  const previousValue = Number(previous);
+  if (!Number.isFinite(previousValue)) return 'same';
+  if (currentValue > previousValue) return 'up';
+  if (currentValue < previousValue) return 'down';
+  return 'same';
+}
+
+function TrendIndicator({ current, previous }) {
+  const trend = getTrend(current, previous);
+  const labels = { up: 'Subió', down: 'Bajó', same: 'Igual' };
+  const icons = { up: '↑', down: '↓', same: '→' };
+  return (
+    <span className={`trend-indicator trend-${trend}`}>
+      <span className="trend-icon" aria-hidden="true">{icons[trend]}</span>
+      {labels[trend]}
+    </span>
+  );
+}
+
+function formatPercentChange(current, previous) {
+  const currentValue = safeNumber(current);
+  const previousValue = safeNumber(previous);
+  if (previousValue === 0) return null;
+  return ((currentValue - previousValue) / previousValue) * 100;
+}
+
+function PeriodSummary({ title, current, previous, formatValue }) {
+  const change = formatPercentChange(current, previous);
+  const trend = getTrend(current, previous);
+  return (
+    <article className="period-summary-card">
+      <p className="stat-label">{title}</p>
+      <p className="period-summary-value">{formatValue(current)}</p>
+      {change === null ? (
+        <p className="period-summary-note">Sin datos del período anterior</p>
+      ) : (
+        <p className={`period-summary-note trend-${trend}`}>
+          <span className="trend-icon" aria-hidden="true">{trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}</span>
+          {change === 0 ? 'Igual que antes' : `${Math.abs(change).toFixed(1)}% vs. período anterior`}
+        </p>
+      )}
+    </article>
+  );
+}
+
+function StatCard({ title, value, current, previous, icon, active, onClick }) {
   const Tag = onClick ? 'button' : 'article';
   return (
     <Tag
@@ -36,53 +89,66 @@ function StatCard({ title, value, subtitle, active, onClick }) {
       className={`stat-card ${onClick ? 'stat-card-button' : ''} ${active ? 'is-active' : ''}`}
       onClick={onClick}
     >
-      <p className="stat-label">{title}</p>
+      <div className="stat-card-heading">
+        <span className="stat-icon" aria-hidden="true">{icon}</span>
+        <p className="stat-label">{title}</p>
+      </div>
       <p className="stat-value">{value}</p>
-      {subtitle && <p className="stat-subtitle">{subtitle}</p>}
+      <TrendIndicator current={current} previous={previous} />
     </Tag>
   );
 }
 
-function SalesHistogram({ histogram }) {
-  if (!histogram) return null;
-
-  const days = Math.max(histogram.daysInCurrentMonth || 31, histogram.daysInPreviousMonth || 31);
-  const currentMap = new Map((histogram.currentMonth || []).map((d) => [d.day, d.total]));
-  const previousMap = new Map((histogram.previousMonth || []).map((d) => [d.day, d.total]));
-
-  const max = Math.max(
-    1,
-    ...Array.from({ length: days }, (_, i) => {
-      const day = i + 1;
-      return Math.max(currentMap.get(day) || 0, previousMap.get(day) || 0);
-    })
-  );
+function SalesPeriodChart({ period, sales, monthlySales }) {
+  const today = new Date();
+  const salesMap = new Map((sales || []).map((item) => [
+    String(item.date).slice(0, 10),
+    safeNumber(item.total),
+  ]));
+  const days = period === 'month'
+    ? Array.from({ length: Math.max(5, monthlySales?.length || 0) }, (_, index) => ({
+        key: `week-${index + 1}`,
+        label: `Sem. ${index + 1}`,
+        total: safeNumber(monthlySales?.find((item) => item.week === index + 1)?.total),
+        isToday: false,
+      }))
+    : Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6 + index);
+        return {
+          key: toInputDate(date),
+          label: date.toLocaleDateString('es-PE', { weekday: 'short' }).replace('.', ''),
+          total: salesMap.get(toInputDate(date)) || 0,
+          isToday: index === 6,
+        };
+      });
+  const max = Math.max(1, ...days.map((day) => day.total));
 
   const width = 720;
   const height = 220;
   const pad = { top: 16, right: 12, bottom: 28, left: 44 };
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
-  const barGroup = chartW / days;
-  const barW = Math.max(2, barGroup * 0.35);
+  const barGroup = chartW / days.length;
+  const barW = Math.max(28, barGroup * 0.55);
 
   return (
     <section className="stat-section sales-histogram-section">
       <div className="section-header">
-        <p className="eyebrow">Comparativo</p>
-        <h2>Ventas por día</h2>
+        <p className="eyebrow">{period === 'month' ? 'Este mes' : 'Últimos días'}</p>
+        <h2>{period === 'month' ? 'Ventas de este mes' : 'Ventas de los últimos 7 días'}</h2>
         <p className="muted">
-          Mes actual ({histogram.currentMonthLabel}) sobre el mes anterior (
-          {histogram.previousMonthLabel}).
+          {period === 'month'
+            ? 'Las ventas están agrupadas por semanas para verlo con claridad.'
+            : 'Hoy está resaltado para que puedas encontrarlo rápidamente.'}
         </p>
       </div>
       <div className="histogram-legend">
-        <span className="legend-current">Mes actual</span>
-        <span className="legend-previous">Mes anterior</span>
+        <span className="legend-seven-days">Ventas</span>
+        {period === 'sevenDays' && <span className="legend-today">Hoy</span>}
       </div>
       <div className="histogram-wrap">
         <svg viewBox={`0 0 ${width} ${height}`} className="sales-histogram" role="img">
-          <title>Histograma de ventas diarias</title>
+          <title>{period === 'month' ? 'Ventas de este mes' : 'Ventas de los últimos 7 días'}</title>
           {[0, 0.25, 0.5, 0.75, 1].map((t) => {
             const y = pad.top + chartH * (1 - t);
             return (
@@ -100,39 +166,21 @@ function SalesHistogram({ histogram }) {
               </g>
             );
           })}
-          {Array.from({ length: days }, (_, i) => {
-            const day = i + 1;
-            const prev = previousMap.get(day) || 0;
-            const curr = currentMap.get(day) || 0;
-            const x = pad.left + i * barGroup + barGroup / 2;
-            const prevH = (prev / max) * chartH;
-            const currH = (curr / max) * chartH;
+          {days.map((day, index) => {
+            const barHeight = (day.total / max) * chartH;
+            const x = pad.left + index * barGroup + barGroup / 2;
             return (
-              <g key={day}>
+              <g key={day.key}>
                 <rect
-                  x={x - barW - 1}
-                  y={pad.top + chartH - prevH}
+                  x={x - barW / 2}
+                  y={pad.top + chartH - barHeight}
                   width={barW}
-                  height={prevH}
-                  className="hist-bar-prev"
+                  height={barHeight}
+                  className={day.isToday ? 'hist-bar-today' : 'hist-bar-seven-days'}
                 />
-                <rect
-                  x={x + 1}
-                  y={pad.top + chartH - currH}
-                  width={barW}
-                  height={currH}
-                  className="hist-bar-curr"
-                />
-                {(day === 1 || day % 5 === 0 || day === days) && (
-                  <text
-                    x={x}
-                    y={height - 8}
-                    textAnchor="middle"
-                    className="hist-axis"
-                  >
-                    {day}
-                  </text>
-                )}
+                <text x={x} y={height - 8} textAnchor="middle" className="hist-axis">
+                  {day.isToday ? 'Hoy' : day.label}
+                </text>
               </g>
             );
           })}
@@ -148,6 +196,7 @@ export default function AdminStatsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [salesOpen, setSalesOpen] = useState(false);
+  const [salesPeriod, setSalesPeriod] = useState('sevenDays');
   const [preset, setPreset] = useState('month');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -313,88 +362,131 @@ export default function AdminStatsPage() {
     return (
       <section className="center-card">
         <div className="alert">{error}</div>
-        <Link className="btn" to="/admin/panel">
-          Volver al panel
-        </Link>
       </section>
     );
   }
+
+  const selectedPeriod = salesPeriod === 'month'
+    ? stats.periods?.currentMonth
+    : stats.periods?.last7Days;
+  const previousPeriod = salesPeriod === 'month'
+    ? stats.periods?.previousMonth
+    : stats.periods?.previous7Days;
 
   return (
     <section className="admin-stats-page">
       <div className="admin-menu-header">
         <div>
-          <p className="eyebrow">Estadísticas administrativas</p>
-          <h1>Visión general</h1>
+              <p className="eyebrow">Resumen sencillo</p>
+              <h1>¿Cómo va el negocio hoy?</h1>
           <p className="muted">
-            Ingresos, pedidos completados y clientes que escanearon QR en el día, mes y año.
+                Aquí puedes ver rápidamente cómo estuvo el día en ventas, pedidos y clientes.
           </p>
         </div>
-        <div className="admin-actions">
-          <Link className="btn" to="/admin/panel">
-            Volver al panel
-          </Link>
-          <Link className="btn" to="/admin/pedidos">
-            Ver pedidos
-          </Link>
-        </div>
       </div>
 
-      <SalesHistogram histogram={stats.salesHistogram} />
+          <section className="today-sales-card" aria-labelledby="today-sales-title">
+            <div>
+              <p className="eyebrow">Lo más importante</p>
+              <h2 id="today-sales-title">Ventas de hoy</h2>
+              <p className="today-sales-value">{formatMoney(stats.daily.revenue)}</p>
+              {Number.isFinite(Number(stats.yesterday?.revenue)) ? (
+                <p className={`today-sales-comparison trend-${getTrend(stats.daily.revenue, stats.yesterday.revenue)}`}>
+                  {getTrend(stats.daily.revenue, stats.yesterday.revenue) === 'up' && (
+                    <span className="trend-icon" aria-hidden="true">↑</span>
+                  )}
+                  {getTrend(stats.daily.revenue, stats.yesterday.revenue) === 'down' && (
+                    <span className="trend-icon" aria-hidden="true">↓</span>
+                  )}
+                  {getTrend(stats.daily.revenue, stats.yesterday.revenue) === 'up' &&
+                    `Hoy vendiste más que ayer (ayer: ${formatMoney(stats.yesterday.revenue)})`}
+                  {getTrend(stats.daily.revenue, stats.yesterday.revenue) === 'down' &&
+                    `Hoy vendiste menos que ayer (ayer: ${formatMoney(stats.yesterday.revenue)})`}
+                  {getTrend(stats.daily.revenue, stats.yesterday.revenue) === 'same' &&
+                    (safeNumber(stats.daily.revenue) === 0
+                      ? 'Sin ventas hoy ni ayer'
+                      : 'Igual que ayer')}
+                </p>
+              ) : (
+                <p className="today-sales-comparison">Todavía no hay datos de ayer para comparar.</p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn primary today-sales-detail"
+              onClick={() => openSalesWithPreset('today')}
+            >
+              Ver detalle de hoy
+            </button>
+          </section>
 
       <div className="admin-stats-grid">
-        <section className="stat-section">
-          <div className="section-header">
-            <p className="eyebrow">Ingresos</p>
-            <h2>Ventas entregadas</h2>
-            <p className="muted">Haz clic en un período para explorar el detalle.</p>
-          </div>
-          <div className="stat-grid">
             <StatCard
-              title="Hoy"
+              title="Ventas"
               value={formatMoney(stats.daily.revenue)}
-              active={salesOpen && preset === 'today'}
-              onClick={() => openSalesWithPreset('today')}
+              current={stats.daily.revenue}
+              previous={stats.yesterday?.revenue}
+              icon="$"
             />
             <StatCard
-              title="Este mes"
-              value={formatMoney(stats.monthly.revenue)}
-              active={salesOpen && preset === 'month'}
-              onClick={() => openSalesWithPreset('month')}
+              title="Pedidos"
+              value={safeNumber(stats.daily.completedOrders)}
+              current={stats.daily.completedOrders}
+              previous={stats.yesterday?.completedOrders}
+              icon="#"
             />
             <StatCard
-              title="Este año"
-              value={formatMoney(stats.yearly.revenue)}
-              active={salesOpen && preset === 'year'}
-              onClick={() => openSalesWithPreset('year')}
+              title="Clientes"
+              value={safeNumber(stats.daily.clients)}
+              current={stats.daily.clients}
+              previous={stats.yesterday?.clients}
+              icon="♥"
             />
-          </div>
-        </section>
-
-        <section className="stat-section">
-          <div className="section-header">
-            <p className="eyebrow">Pedidos completados</p>
-            <h2>Pedidos entregados</h2>
-          </div>
-          <div className="stat-grid">
-            <StatCard title="Hoy" value={stats.daily.completedOrders} />
-            <StatCard title="Este mes" value={stats.monthly.completedOrders} />
-            <StatCard title="Este año" value={stats.yearly.completedOrders} />
-          </div>
-        </section>
-
-        <section className="stat-section">
-          <div className="section-header">
-            <p className="eyebrow">Clientes QR</p>
-            <h2>Clientes que escanearon el QR</h2>
-          </div>
-          <div className="stat-grid">
-            <StatCard title="Hoy" value={stats.daily.clients} subtitle="Clientes únicos" />
-            <StatCard title="Este mes" value={stats.monthly.clients} subtitle="Clientes únicos" />
-            <StatCard title="Este año" value={stats.yearly.clients} subtitle="Clientes únicos" />
-          </div>
-        </section>
       </div>
+
+          <section className="sales-period-section">
+            <div className="sales-period-tabs" role="tablist" aria-label="Período de ventas">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={salesPeriod === 'sevenDays'}
+                className={`tab-button ${salesPeriod === 'sevenDays' ? 'active' : ''}`}
+                onClick={() => setSalesPeriod('sevenDays')}
+              >
+                7 días
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={salesPeriod === 'month'}
+                className={`tab-button ${salesPeriod === 'month' ? 'active' : ''}`}
+                onClick={() => setSalesPeriod('month')}
+              >
+                Este mes
+              </button>
+            </div>
+
+            <SalesPeriodChart
+              period={salesPeriod}
+              sales={stats.salesLast7Days}
+              monthlySales={stats.salesCurrentMonthByWeek}
+            />
+
+            <div className="period-summary-grid">
+              <PeriodSummary
+                title="Total de ventas"
+                current={selectedPeriod?.totalSales}
+                previous={previousPeriod?.totalSales}
+                formatValue={formatMoney}
+              />
+              <PeriodSummary
+                title="Pedidos completados"
+                current={selectedPeriod?.completedOrders}
+                previous={previousPeriod?.completedOrders}
+                formatValue={(value) => String(safeNumber(value))}
+              />
+            </div>
+          </section>
 
       {salesOpen && (
         <section className="stat-section sales-explorer">
