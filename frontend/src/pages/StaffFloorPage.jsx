@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import StaffAlertsBanner from '../components/StaffAlertsBanner';
 import { clearStaffSession } from '../auth';
@@ -19,6 +19,7 @@ function openTakeOrderWindow(role, sessionToken, label) {
  * La toma de pedido se abre en una ventana nueva.
  */
 export default function StaffFloorPage({ roleRequired }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [staff, setStaff] = useState(null);
@@ -131,7 +132,8 @@ export default function StaffFloorPage({ roleRequired }) {
   }
 
   const pedidosPath = staff?.role === 'admin' ? '/admin/pedidos' : '/mesero/pedidos';
-  const panelLink = staff?.role === 'admin' ? '/admin/panel' : null;
+  const inAdminPanel = location.pathname.startsWith('/admin/panel');
+  const panelLink = staff?.role === 'admin' && !inAdminPanel ? '/admin/panel' : null;
 
   return (
     <section className="staff-floor">
@@ -151,15 +153,19 @@ export default function StaffFloorPage({ roleRequired }) {
               Panel
             </Link>
           )}
-          <Link className="btn" to={pedidosPath}>
-            Pedidos
-          </Link>
+          {!inAdminPanel && (
+            <Link className="btn" to={pedidosPath}>
+              Pedidos
+            </Link>
+          )}
           <button type="button" className="btn" onClick={load}>
             Refrescar
           </button>
-          <button type="button" className="btn" onClick={logout}>
-            Cerrar sesión
-          </button>
+          {!inAdminPanel && (
+            <button type="button" className="btn" onClick={logout}>
+              Cerrar sesión
+            </button>
+          )}
         </div>
       </div>
 

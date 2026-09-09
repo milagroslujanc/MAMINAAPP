@@ -175,9 +175,6 @@ export default function AdminTablesPage() {
           </p>
         </div>
         <div className="admin-actions">
-          <Link className="btn" to="/admin/panel">
-            Volver al panel
-          </Link>
           <Link className="btn" to="/">
             Ver recepción
           </Link>

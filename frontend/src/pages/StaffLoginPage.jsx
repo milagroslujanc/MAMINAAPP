@@ -42,7 +42,9 @@ export default function StaffLoginPage({ expectedRole }) {
           return;
         }
         if (!cancelled) {
-          navigate(homeForRole(expectedRole), { replace: true });
+          navigate(expectedRole === 'admin' ? '/admin/panel/inicio' : homeForRole(expectedRole), {
+            replace: true,
+          });
         }
       } catch {
         clearStaffSession(expectedRole);
@@ -71,7 +73,9 @@ export default function StaffLoginPage({ expectedRole }) {
         return;
       }
 
-      navigate(homeForRole(expectedRole), { replace: true });
+      navigate(expectedRole === 'admin' ? '/admin/panel/inicio' : homeForRole(expectedRole), {
+        replace: true,
+      });
     } catch (err) {
       setError(err.message || 'Datos incorrectos');
     } finally {
